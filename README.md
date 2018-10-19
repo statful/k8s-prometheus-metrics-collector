@@ -1,31 +1,11 @@
-= Statful-metrics-pipeline
+# k8s-metrics-collector
 
-image:https://img.shields.io/badge/vert.x-3.5.4-purple.svg[link="https://vertx.io"]
+TODO
 
-This application was generated using http://start.vertx.io
+## Table of Contents
 
-== Building
+## Features
 
-To launch your tests:
-```
-./mvnw clean test
-```
+## Configuration
 
-To package your application:
-```
-./mvnw clean package
-```
-
-To run your application:
-```
-./mvnw clean exec:java
-```
-
-== Help
-
-* https://vertx.io/docs/[Vert.x Documentation]
-* https://stackoverflow.com/questions/tagged/vert.x?sort=newest&pageSize=15[Vert.x Stack Overflow]
-* https://groups.google.com/forum/?fromgroups#!forum/vertx[Vert.x User Group]
-* https://gitter.im/eclipse-vertx/vertx-users[Vert.x Gitter]
-
-
+### Container configuration 
