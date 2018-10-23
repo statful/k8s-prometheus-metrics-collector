@@ -6,10 +6,10 @@
 
     <groupId>com.statful.collector</groupId>
     <artifactId>k8s-metrics-pipeline</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>8</java.version>
 
         <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
         <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
@@ -142,7 +142,7 @@
                             </transformers>
                             <artifactSet>
                             </artifactSet>
-                            <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar
+                            <outputFile>${project.build.directory}/${project.artifactId}-fat.jar
                             </outputFile>
                         </configuration>
                     </execution>

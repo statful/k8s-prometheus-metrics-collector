@@ -13,7 +13,6 @@ import io.reactivex.Flowable;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -23,7 +22,6 @@ public class TextParser extends Converter implements Loggable {
     private static final Pattern TYPE_PATTERN = Pattern.compile("# TYPE (?<name>[a-z_]+) (?<type>[a-z]+)");
     private static final Pattern SAMPLE_PATTERN = Pattern.compile("^(?<name>[a-z_]+)(\\{(?<tags>[a-zA-Z0-9.+:/%?=&<>_\",-]+)})? (?<value>[0-9A-Za-z.e+-]+)");
 
-    private static final String BUCKET_SUFFIX = "_bucket";
     private static final String NAME = "name";
     private static final String TYPE = "type";
     private static final String HISTOGRAM = "histogram";

@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eo pipefail
+
+## SOURCE CONFIGS
+source ${BASH_SOURCE%/*}/source.sh
+
+## TAG IMAGE
+docker tag ${APPLICATION_NAME}:${VERSION} ${DOCKER_HUB_USER}/${APPLICATION_NAME}:${VERSION}
+docker tag ${APPLICATION_NAME}:${VERSION} ${DOCKER_HUB_USER}/${APPLICATION_NAME}:latest
+
+## UPLOAD IMAGE
+docker push ${DOCKER_HUB_USER}/${APPLICATION_NAME}:${VERSION}
+docker push ${DOCKER_HUB_USER}/${APPLICATION_NAME}:latest
