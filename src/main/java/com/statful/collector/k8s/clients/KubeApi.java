@@ -13,6 +13,7 @@ import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
+import io.vertx.reactivex.ext.web.client.HttpRequest;
 import io.vertx.reactivex.ext.web.client.HttpResponse;
 import io.vertx.reactivex.ext.web.client.WebClient;
 
@@ -23,10 +24,12 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String KUBERNETES_API_HOST_KEY = "kubernetes.api.host";
     private static final String KUBERNETES_API_PORT_KEY = "kubernetes.api.port";
     private static final String KUBERNETES_API_CERT_KEY = "kubernetes.api.cert";
+    private static final String KUBERNETES_API_TOKEN_KEY = "kubernetes.api.token";
 
     private static final String DEFAULT_KUBE_API_HOST = "kubernetes.default.svc.cluster.local";
     private static final String DEFAULT_KUBE_API_PORT = "443";
     private static final String DEFAULT_KUBE_API_CERT_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    private static final String DEFAULT_KUBE_API_TOKEN_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
     private static final String BASE_NODE = "/api/v1/nodes/";
     private static final String METRICS = "/proxy/metrics";
@@ -36,21 +39,37 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String GET_NODE_METRICS = "getNodeMetrics";
     private static final String GET_CADVISOR_NODE_METRICS = "getCAdvisorNodeMetrics";
 
+    private static final int SSL_PORT = 443;
+
     private WebClient client;
     private boolean isDevLoggingEnabled;
+    private Buffer token;
 
     @Override
     public void start(Future<Void> startFuture) {
         isDevLoggingEnabled = Boolean.valueOf(System.getProperty(DEV_MODE_KEY, Boolean.FALSE.toString()));
-        initWebClient();
-        registerConsumers();
-        startFuture.complete();
-    }
-
-    private void initWebClient() {
         final String host = System.getProperty(KUBERNETES_API_HOST_KEY, DEFAULT_KUBE_API_HOST);
         final int port = Integer.valueOf(System.getProperty(KUBERNETES_API_PORT_KEY, DEFAULT_KUBE_API_PORT));
 
+        initWebClient(host, port);
+        registerConsumers();
+
+        if (port == SSL_PORT) {
+            final String tokenLocation = System.getProperty(KUBERNETES_API_TOKEN_KEY, DEFAULT_KUBE_API_TOKEN_LOCATION);
+            vertx.fileSystem().rxReadFile(tokenLocation)
+                    .subscribe(file -> {
+                        this.token = file;
+                        startFuture.complete();
+                    }, error -> {
+                        log().error("Error reading token file {}", error, tokenLocation);
+                        startFuture.fail(error);
+                    });
+        } else {
+            startFuture.complete();
+        }
+    }
+
+    private void initWebClient(String host, int port) {
         WebClientOptions options = buildWebClientOptions(host, port);
 
         client = WebClient.create(vertx, options);
@@ -60,10 +79,15 @@ public class KubeApi extends AbstractVerticle implements Loggable {
         WebClientOptions options;
         if (port == 443) {
             final String certLocation = System.getProperty(KUBERNETES_API_CERT_KEY, DEFAULT_KUBE_API_CERT_LOCATION);
+
             options = new WebClientOptions()
                     .setDefaultHost(host)
                     .setDefaultPort(port)
-                    .setPemTrustOptions(new PemTrustOptions().addCertPath(certLocation));
+                    .setSsl(true)
+                    .setTrustAll(false)
+                    .setVerifyHost(true)
+                    .setPemTrustOptions(new PemTrustOptions()
+                            .addCertPath(certLocation));
         } else {
             options = new WebClientOptions()
                     .setDefaultHost(host)
@@ -95,7 +119,11 @@ public class KubeApi extends AbstractVerticle implements Loggable {
             log().info("{0} - {1} executed", HttpMethod.GET, url);
         }
 
-        client.get(url).rxSend()
+        final HttpRequest<Buffer> request = client.get(url)
+                .putHeader("Authorization", "Bearer " + token.toString());
+
+        request
+                .rxSend()
                 .doOnSuccess(response -> logResponse(url, response))
                 .map(response -> handleBody(response, mapper))
                 .subscribe(message::reply, error -> log().error("{0} - {1} failed", error, HttpMethod.GET, url));
