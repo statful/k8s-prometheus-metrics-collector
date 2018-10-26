@@ -6,6 +6,7 @@ import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.impl.HttpStatusException;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -21,9 +22,11 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String DEV_MODE_KEY = "development.logging.enabled";
     private static final String KUBERNETES_API_HOST_KEY = "kubernetes.api.host";
     private static final String KUBERNETES_API_PORT_KEY = "kubernetes.api.port";
+    private static final String KUBERNETES_API_CERT_KEY = "kubernetes.api.cert";
 
     private static final String DEFAULT_KUBE_API_HOST = "kubernetes.default.svc.cluster.local";
     private static final String DEFAULT_KUBE_API_PORT = "443";
+    private static final String DEFAULT_KUBE_API_CERT_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
 
     private static final String BASE_NODE = "/api/v1/nodes/";
     private static final String METRICS = "/proxy/metrics";
@@ -48,11 +51,25 @@ public class KubeApi extends AbstractVerticle implements Loggable {
         final String host = System.getProperty(KUBERNETES_API_HOST_KEY, DEFAULT_KUBE_API_HOST);
         final int port = Integer.valueOf(System.getProperty(KUBERNETES_API_PORT_KEY, DEFAULT_KUBE_API_PORT));
 
-        final WebClientOptions options = new WebClientOptions()
-                .setDefaultHost(host)
-                .setDefaultPort(port);
+        WebClientOptions options = buildWebClientOptions(host, port);
 
         client = WebClient.create(vertx, options);
+    }
+
+    private WebClientOptions buildWebClientOptions(String host, int port) {
+        WebClientOptions options;
+        if (port == 443) {
+            final String certLocation = System.getProperty(KUBERNETES_API_CERT_KEY, DEFAULT_KUBE_API_CERT_LOCATION);
+            options = new WebClientOptions()
+                    .setDefaultHost(host)
+                    .setDefaultPort(port)
+                    .setPemTrustOptions(new PemTrustOptions().addCertPath(certLocation));
+        } else {
+            options = new WebClientOptions()
+                    .setDefaultHost(host)
+                    .setDefaultPort(port);
+        }
+        return options;
     }
 
     private void registerConsumers() {
