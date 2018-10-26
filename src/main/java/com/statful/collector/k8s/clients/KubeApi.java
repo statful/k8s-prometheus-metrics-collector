@@ -22,7 +22,7 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String KUBERNETES_API_HOST_KEY = "kubernetes.api.host";
     private static final String KUBERNETES_API_PORT_KEY = "kubernetes.api.port";
 
-    private static final String DEFAULT_KUBE_API_HOST = "kubernetes.default.svc";
+    private static final String DEFAULT_KUBE_API_HOST = "kubernetes.default.svc.cluster.local";
     private static final String DEFAULT_KUBE_API_PORT = "443";
 
     private static final String BASE_NODE = "/api/v1/nodes/";
