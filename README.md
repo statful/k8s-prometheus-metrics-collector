@@ -47,7 +47,7 @@ supports [cAdvisor](https://github.com/google/cadvisor) and node metrics.
 Install using the following command, after replacing the statful token placeholder in the yaml file:
 
 ```
-kubectl create -f https://raw.githubusercontent.com/statful/k8s-metrics-collector/deploy/1.0.4.yaml
+kubectl create -f https://raw.githubusercontent.com/statful/k8s-metrics-collector/master/deploy/1.0.4.yaml
 ```
 
 ## Container
