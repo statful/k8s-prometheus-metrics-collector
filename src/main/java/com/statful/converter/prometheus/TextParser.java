@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 public class TextParser extends Converter implements Loggable {
@@ -38,6 +39,25 @@ public class TextParser extends Converter implements Loggable {
             .put(COUNTER, MetricType.COUNTER)
             .put(GAUGE, MetricType.GAUGE)
             .build();
+
+    private Pattern ignorePattern;
+    private boolean shouldFilter;
+
+    public TextParser(String ignorePattern) {
+        if (ignorePattern != null && !ignorePattern.isEmpty()) {
+            try {
+                this.ignorePattern = Pattern.compile(ignorePattern);
+                this.shouldFilter = true;
+            } catch (PatternSyntaxException e) {
+                this.ignorePattern = null;
+                this.shouldFilter = false;
+                log().error("Invalid ignore pattern regex", e);
+            }
+        } else {
+            this.ignorePattern = null;
+            this.shouldFilter = false;
+        }
+    }
 
     @Override
     protected CustomMetric.Builder beforeBuild(CustomMetric.Builder builder) {
@@ -96,6 +116,11 @@ public class TextParser extends Converter implements Loggable {
         String metricType = "";
 
         for (String line : metricLines) {
+            // Ignore metrics with names that match the given regex
+            if (shouldFilter && !metricName.isEmpty() && ignorePattern.matcher(metricName).find()) {
+                continue;
+            }
+
             if (line.startsWith("# TYPE")) {
                 final Matcher matcher = TYPE_PATTERN.matcher(line);
 

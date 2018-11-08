@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: statful-k8s-metrics-collector
+  namespace: default
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: k8s-metrics-collector
+  name: k8s-metrics-collector
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: k8s-metrics-collector
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        run: k8s-metrics-collector
+    spec:
+      serviceAccountName: statful-k8s-metrics-collector
+      containers:
+      - image: statful/k8s-metrics-collector:1.0.4
+        imagePullPolicy: Always
+        name: k8s-metrics-collector
+        resources:
+          limits:
+            cpu: 0.1
+            memory: 512Mi
+          requests:
+            cpu: 0.1
+            memory: 320Mi
+        env:
+        - name: STATFUL_TOKEN
+          value: TOKEN_PLACEHOLDER

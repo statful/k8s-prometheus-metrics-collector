@@ -3,6 +3,7 @@ package com.statful.converter.prometheus;
 import com.statful.client.CustomMetric;
 import com.statful.client.StatfulMetricsOptions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -13,9 +14,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TextParserTest {
+    private static final String IGNORED_COUNT_METRIC =
+            "# HELP ignore_metric_name some comment about the metric\n" +
+                    "# TYPE ignore_metric_name counter\n" +
+                    "ignore_metric_name 1\n" +
+                    "ignore_metric_name{key=\"value\"} 2\n" +
+                    "ignore_metric_name{key=\"value\",key2=\"value2\"} 3\n" +
+                    "ignore_metric_name{key=\"value\",key2=\"value2\"} 3e-2\n" +
+                    "ignore_metric_name{key=\"value\",key2=\"value2\"} NaN";
     private static final String COUNT_METRIC =
             "# HELP metric_name some comment about the metric\n" +
                     "# TYPE metric_name counter\n" +
@@ -69,7 +79,7 @@ public class TextParserTest {
 
     @BeforeEach
     void setUp() {
-        victim = new TextParser();
+        victim = new TextParser("");
     }
 
     @ParameterizedTest
@@ -94,6 +104,15 @@ public class TextParserTest {
                     return matcher.matches();
                 })
                 .assertComplete();
+    }
+
+    @Test
+    void convertWithFilter() {
+        TextParser victim = new TextParser("ignore");
+
+        final List<CustomMetric> result = victim.convert(IGNORED_COUNT_METRIC);
+        final String actual = printMetrics(result);
+        assertEquals("", actual);
     }
 
     private static Stream<Arguments> parameterProvider() {

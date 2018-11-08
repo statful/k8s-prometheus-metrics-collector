@@ -15,10 +15,11 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
     @Override
     public void start(Future<Void> startFuture) {
         final int collectSchedulerPeriod = Integer.valueOf(System.getProperty("collector.period", COLLECT_SCHEDULER_PERIOD));
+        final String ignoredMetricsPattern = System.getProperty("collector.ignore", "");
 
         final EventBus eventBus = vertx.eventBus();
         final KubeApi.Client client = new KubeApi.Client(eventBus);
-        final TextParser textParser = new TextParser();
+        final TextParser textParser = new TextParser(ignoredMetricsPattern);
         final NodeMetricsCollector nodeMetricsCollector = new NodeMetricsCollector(client, eventBus, textParser);
 
         vertx.setPeriodic(collectSchedulerPeriod, id -> nodeMetricsCollector.collect());
