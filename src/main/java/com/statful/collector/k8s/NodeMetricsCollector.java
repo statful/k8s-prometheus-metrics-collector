@@ -17,6 +17,9 @@ public class NodeMetricsCollector implements Loggable {
     private static final String ITEMS = "items";
     private static final String METADATA = "metadata";
     private static final String NAME = "name";
+    private static final String ROLE = "role";
+    private static final String LABELS = "labels";
+    private static final String KUBERNETES_IO_ROLE = "kubernetes.io/role";
 
     private final KubeApi.Client kubeApi;
     private final EventBus eventBus;
@@ -29,20 +32,20 @@ public class NodeMetricsCollector implements Loggable {
     }
 
     public void collect() {
-        final Flowable<String> names = getNodeNames().cache();
+        final Flowable<JsonObject> names = getNodeMetadata().cache();
 
         final Flowable<CustomMetric> nodeMetrics = names
-                .flatMap(node -> kubeApi.getNodeMetrics(node).toFlowable()
-                        .flatMap(text -> converter.rxConvert(text, buildNodeTag(node)))
+                .flatMap(node -> kubeApi.getNodeMetrics(node.getString(NAME)).toFlowable()
+                        .flatMap(text -> converter.rxConvert(text, buildNodeTags(node)))
                         .onErrorResumeNext(e -> {
-                            log().error("Failed to convert metrics for node {0}", node);
+                            log().error("Failed to convert metrics for node {0}", e, node);
                         }));
 
         final Flowable<CustomMetric> cAdvisorNodeMetrics = names
-                .flatMap(node -> kubeApi.getCAdvisorNodeMetrics(node).toFlowable()
-                        .flatMap(text -> converter.rxConvert(text, buildNodeTag(node)))
+                .flatMap(node -> kubeApi.getCAdvisorNodeMetrics(node.getString(NAME)).toFlowable()
+                        .flatMap(text -> converter.rxConvert(text, buildNodeTags(node)))
                         .onErrorResumeNext(e -> {
-                            log().error("Failed to convert metrics for node {0}", node);
+                            log().error("Failed to convert metrics for node {0}", e, node);
                         }));
 
         Flowable.merge(nodeMetrics, cAdvisorNodeMetrics)
@@ -57,15 +60,15 @@ public class NodeMetricsCollector implements Loggable {
         }
     }
 
-    private Flowable<String> getNodeNames() {
+    private Flowable<JsonObject> getNodeMetadata() {
         return kubeApi.getNodes()
                 .flattenAsFlowable(response -> response.getJsonArray(ITEMS))
                 .cast(JsonObject.class)
-                .map(item -> item.getJsonObject(METADATA))
-                .map(metadata -> metadata.getString(NAME));
+                .map(item -> item.getJsonObject(METADATA));
     }
 
-    private ArrayList<Pair<String, String>> buildNodeTag(String node) {
-        return Lists.newArrayList(new Pair<>("node", node));
+    private ArrayList<Pair<String, String>> buildNodeTags(JsonObject node) {
+        return Lists.newArrayList(new Pair<>("node", node.getString(NAME)),
+                new Pair<>(ROLE, node.getJsonObject(LABELS).getString(KUBERNETES_IO_ROLE)));
     }
 }

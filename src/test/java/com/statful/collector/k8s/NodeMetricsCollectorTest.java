@@ -18,10 +18,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.stream.Stream;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class NodeMetricsCollectorTest {
@@ -90,8 +87,11 @@ public class NodeMetricsCollectorTest {
 
     private Single<JsonObject> mockNodes() {
         final JsonArray items = Stream.of("node1", "node2", "node3")
-                .map(node -> new JsonObject().put("name", node))
-                .map(metadata -> new JsonObject().put("metadata", metadata))
+                .map(node -> new JsonObject()
+                        .put("labels", new JsonObject().put("kubernetes.io/role", "node"))
+                        .put("name", node))
+                .map(metadata -> new JsonObject()
+                        .put("metadata", metadata))
                 .reduce(new JsonArray(), JsonArray::add, JsonArray::addAll);
 
         return Single.just(new JsonObject().put("items", items));

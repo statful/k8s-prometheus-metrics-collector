@@ -44,6 +44,7 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private WebClient client;
     private boolean isDevLoggingEnabled;
     private Buffer token;
+    private boolean useAuthentication;
 
     @Override
     public void start(Future<Void> startFuture) {
@@ -55,6 +56,7 @@ public class KubeApi extends AbstractVerticle implements Loggable {
         registerConsumers();
 
         if (port == SSL_PORT) {
+            useAuthentication = true;
             final String tokenLocation = System.getProperty(KUBERNETES_API_TOKEN_KEY, DEFAULT_KUBE_API_TOKEN_LOCATION);
             vertx.fileSystem().rxReadFile(tokenLocation)
                     .subscribe(file -> {
@@ -119,8 +121,11 @@ public class KubeApi extends AbstractVerticle implements Loggable {
             log().info("{0} - {1} executed", HttpMethod.GET, url);
         }
 
-        final HttpRequest<Buffer> request = client.get(url)
-                .putHeader("Authorization", "Bearer " + token.toString());
+        final HttpRequest<Buffer> request = client.get(url);
+
+        if (useAuthentication) {
+            request.putHeader("Authorization", "Bearer " + token.toString());
+        }
 
         request
                 .rxSend()
