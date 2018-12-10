@@ -17,4 +17,4 @@ else
     COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false} -Dcollector.ignore=${COLLECTOR_IGNORE}"
 fi
 
-exec java ${HEAP_OPTS} ${JVM_OPTS} ${GC_OPTS} ${STATFUL_OPTS} ${KUBE_OPTS} ${COLLECTOR_OPTS} -jar /opt/${APPLICATION_NAME}/${APPLICATION_NAME}.jar
+exec java ${HEAP_OPTS} ${JVM_OPTS} ${GC_OPTS} ${STATFUL_OPTS} ${KUBE_OPTS} ${COLLECTOR_OPTS} -Dstatful.timer.agg=${STATFUL_TIMER_AGG:-AVG,P90,COUNT} -Dstatful.counter.agg=${STATFUL_COUNTER_AGG:-COUNT,SUM} -Dstatful.gauge.agg=${STATFUL_GAUGE_AGG:-LAST,MAX,AVG} -jar /opt/${APPLICATION_NAME}/${APPLICATION_NAME}.jar
