@@ -128,7 +128,7 @@ public class TextParser extends Converter implements Loggable {
                     metricName = matcher.group(NAME);
                     metricType = matcher.group(TYPE);
                 }
-            } else if (!line.startsWith("# HELP")) {
+            } else if (line.charAt(0) != '#') {
                 final Matcher matcher = SAMPLE_PATTERN.matcher(line);
 
                 while (matcher.find()) {

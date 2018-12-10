@@ -65,9 +65,9 @@ public class CustomLauncher extends Launcher implements Loggable {
         statfulToken = System.getProperty("statful.token");
         statfulHost = System.getProperty("statful.host", "api.statful.com");
         statfulDryRun = Boolean.valueOf(System.getProperty("statful.dryrun", String.valueOf(false)));
-        collectAggregationProperty("statful.timer.agg");
-        collectAggregationProperty("statful.counter.agg");
-        collectAggregationProperty("statful.gauge.agg");
+        collectAggregationProperty("statful.timer.agg", timerAgg);
+        collectAggregationProperty("statful.counter.agg", counterAgg);
+        collectAggregationProperty("statful.gauge.agg", gaugeAgg);
         String statfulEnvironment = System.getProperty("statful.environment");
 
         if (nonNull(statfulEnvironment)) {
@@ -75,12 +75,12 @@ public class CustomLauncher extends Launcher implements Loggable {
         }
     }
 
-    private void collectAggregationProperty(String propertyName) {
+    private void collectAggregationProperty(String propertyName, List<Aggregation> list) {
         final String property = System.getProperty(propertyName, "");
         if (!property.isEmpty()) {
             Arrays.stream(property.split(","))
                     .map(Aggregation::valueOf)
-                    .forEach(timerAgg::add);
+                    .forEach(list::add);
         }
     }
 
