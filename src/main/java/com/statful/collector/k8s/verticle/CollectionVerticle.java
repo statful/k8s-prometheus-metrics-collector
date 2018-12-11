@@ -3,7 +3,7 @@ package com.statful.collector.k8s.verticle;
 import com.statful.collector.k8s.NodeMetricsCollector;
 import com.statful.collector.k8s.clients.KubeApi;
 import com.statful.collector.k8s.utils.Loggable;
-import com.statful.converter.prometheus.TextParser;
+import com.statful.converter.prometheus.PrometheusParser;
 import io.vertx.core.Future;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.eventbus.EventBus;
@@ -19,7 +19,7 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
 
         final EventBus eventBus = vertx.eventBus();
         final KubeApi.Client client = new KubeApi.Client(eventBus);
-        final TextParser textParser = new TextParser(ignoredMetricsPattern);
+        final PrometheusParser textParser = new PrometheusParser(ignoredMetricsPattern);
         final NodeMetricsCollector nodeMetricsCollector = new NodeMetricsCollector(client, eventBus, textParser);
 
         vertx.setPeriodic(collectSchedulerPeriod, id -> nodeMetricsCollector.collect());

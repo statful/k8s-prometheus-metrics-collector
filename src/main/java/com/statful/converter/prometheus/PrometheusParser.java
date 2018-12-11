@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-public class TextParser extends Converter implements Loggable {
+public class PrometheusParser extends Converter implements Loggable {
 
     private static final Pattern TYPE_PATTERN = Pattern.compile("# TYPE (?<name>[a-z_]+) (?<type>[a-z]+)");
     private static final Pattern SAMPLE_PATTERN = Pattern.compile("^(?<name>[a-z_]+)(\\{(?<tags>[a-zA-Z0-9.+:/%?=&<>_\",-]+)})? (?<value>[0-9A-Za-z.e+-]+)");
@@ -43,7 +43,7 @@ public class TextParser extends Converter implements Loggable {
     private Pattern ignorePattern;
     private boolean shouldFilter;
 
-    public TextParser(String ignorePattern) {
+    public PrometheusParser(String ignorePattern) {
         if (ignorePattern != null && !ignorePattern.isEmpty()) {
             try {
                 this.ignorePattern = Pattern.compile(ignorePattern);

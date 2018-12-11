@@ -34,10 +34,14 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String BASE_NODE = "/api/v1/nodes/";
     private static final String METRICS = "/proxy/metrics";
     private static final String CADVISOR_METRICS = "/proxy/metrics/cadvisor";
+    private static final String METRICS_SERVER_PODS = "/apis/metrics.k8s.io/v1beta1/pods/";
+    private static final String METRICS_SERVER_NODES = "/apis/metrics.k8s.io/v1beta1/nodes/";
 
     private static final String GET_NODES = "getNodes";
     private static final String GET_NODE_METRICS = "getNodeMetrics";
     private static final String GET_CADVISOR_NODE_METRICS = "getCAdvisorNodeMetrics";
+    private static final String GET_METRICS_SERVER_NODE_METRICS = "getMetricsServerNodeMetrics";
+    private static final String GET_METRICS_SERVER_PODS_METRICS = "getMetricsServerPodsMetrics";
 
     private static final int SSL_PORT = 443;
 
@@ -102,6 +106,8 @@ public class KubeApi extends AbstractVerticle implements Loggable {
         vertx.eventBus().consumer(GET_NODES, this::getNodes);
         vertx.eventBus().consumer(GET_NODE_METRICS, this::getNodeMetrics);
         vertx.eventBus().consumer(GET_CADVISOR_NODE_METRICS, this::getCAdvisorNodeMetrics);
+        vertx.eventBus().consumer(GET_METRICS_SERVER_NODE_METRICS, this::getMetricsServerNodeMetrics);
+        vertx.eventBus().consumer(GET_METRICS_SERVER_PODS_METRICS, this::getMetricsServerPodsMetrics);
     }
 
     private void getNodes(Message<String> message) {
@@ -114,6 +120,14 @@ public class KubeApi extends AbstractVerticle implements Loggable {
 
     private void getCAdvisorNodeMetrics(Message<String> message) {
         request(BASE_NODE + message.body() + CADVISOR_METRICS, message, HttpResponse::bodyAsString);
+    }
+
+    private void getMetricsServerNodeMetrics(Message<String> message) {
+        request(METRICS_SERVER_NODES + message.body(), message, HttpResponse::bodyAsJsonObject);
+    }
+
+    private void getMetricsServerPodsMetrics(Message<String> message) {
+        request(METRICS_SERVER_PODS, message, HttpResponse::bodyAsJsonObject);
     }
 
     private <T> void request(String url, Message<String> message, Function<HttpResponse<Buffer>, T> mapper) {
@@ -169,6 +183,16 @@ public class KubeApi extends AbstractVerticle implements Loggable {
 
         public Single<String> getCAdvisorNodeMetrics(String node) {
             return eventBus.<String>rxSend(KubeApi.GET_CADVISOR_NODE_METRICS, node)
+                    .map(Message::body);
+        }
+
+        public Single<JsonObject> getMetricsServerNodeMetrics(String node) {
+            return eventBus.<JsonObject>rxSend(KubeApi.GET_METRICS_SERVER_NODE_METRICS, node)
+                    .map(Message::body);
+        }
+
+        public Single<JsonObject> getMetricsServerPodsMetrics() {
+            return eventBus.<JsonObject>rxSend(KubeApi.GET_METRICS_SERVER_PODS_METRICS, "")
                     .map(Message::body);
         }
     }

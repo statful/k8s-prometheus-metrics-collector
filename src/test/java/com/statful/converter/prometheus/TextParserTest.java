@@ -75,11 +75,11 @@ public class TextParserTest {
     private static final StatfulMetricsOptions STATFUL_METRICS_OPTIONS = new StatfulMetricsOptions()
             .setNamespace("test");
 
-    private TextParser victim;
+    private PrometheusParser victim;
 
     @BeforeEach
     void setUp() {
-        victim = new TextParser("");
+        victim = new PrometheusParser("");
     }
 
     @ParameterizedTest
@@ -108,7 +108,7 @@ public class TextParserTest {
 
     @Test
     void convertWithFilter() {
-        TextParser victim = new TextParser("ignore");
+        PrometheusParser victim = new PrometheusParser("ignore");
 
         final List<CustomMetric> result = victim.convert(IGNORED_COUNT_METRIC);
         final String actual = printMetrics(result);

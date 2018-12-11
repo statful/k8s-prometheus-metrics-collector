@@ -12,9 +12,9 @@ else
 fi
 
 if [ -v ${COLLECTOR_IGNORE} ]; then
-    COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false}"
+    COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false} -Dcollector.cadvisor.disabled=${COLLECTOR_CADVISOR_DISABLED:-false} -Dcollector.nodes.disabled=${COLLECTOR_NODES_DISABLED:-false} -Dcollector.metricsserver.disabled=${COLLECTOR_METRICSSERVER_DISABLED:-false}"
 else
-    COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false} -Dcollector.ignore=${COLLECTOR_IGNORE}"
+    COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false} -Dcollector.cadvisor.disabled=${COLLECTOR_CADVISOR_DISABLED:-false} -Dcollector.nodes.disabled=${COLLECTOR_NODES_DISABLED:-false} -Dcollector.metricsserver.disabled=${COLLECTOR_METRICSSERVER_DISABLED:-false} -Dcollector.ignore=${COLLECTOR_IGNORE}"
 fi
 
 exec java ${HEAP_OPTS} ${JVM_OPTS} ${GC_OPTS} ${STATFUL_OPTS} ${KUBE_OPTS} ${COLLECTOR_OPTS} -Dstatful.timer.agg=${STATFUL_TIMER_AGG:-AVG,P90,COUNT} -Dstatful.counter.agg=${STATFUL_COUNTER_AGG:-COUNT,SUM} -Dstatful.gauge.agg=${STATFUL_GAUGE_AGG:-LAST,MAX,AVG} -jar /opt/${APPLICATION_NAME}/${APPLICATION_NAME}.jar

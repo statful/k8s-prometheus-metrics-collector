@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -43,15 +44,20 @@ public class NodeMetricsCollectorTest {
 
     @Test
     void collect() {
+        ArgumentCaptor<CustomMetric> captor = ArgumentCaptor.forClass(CustomMetric.class);
+
         when(kubeApi.getNodes()).thenReturn(mockNodes());
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(converter.rxConvert(eq("metrics"), anyList())).thenReturn(mockCustomMetrics());
+        when(kubeApi.getMetricsServerNodeMetrics(anyString())).thenReturn(mockNodeMetrics());
+        when(kubeApi.getMetricsServerPodsMetrics()).thenReturn(mockPodsMetrics());
 
         victim.collect();
 
+        verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
         verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(18)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(eventBus, times(26)).send(eq(CustomMetricsConsumer.ADDRESS), captor.capture());
     }
 
     @Test
@@ -60,13 +66,16 @@ public class NodeMetricsCollectorTest {
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(converter.rxConvert(eq("metrics"), anyList()))
-                .thenReturn(Flowable.error(new IllegalArgumentException()))
+                .thenReturn(Flowable.error(new IllegalArgumentException("Mock failure, should send all metrics anyway")))
                 .thenReturn(mockCustomMetrics());
+        when(kubeApi.getMetricsServerNodeMetrics(anyString())).thenReturn(mockNodeMetrics());
+        when(kubeApi.getMetricsServerPodsMetrics()).thenReturn(mockPodsMetrics());
 
         victim.collect();
 
+        verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
         verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(15)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(eventBus, times(23)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
     }
 
     @Test
@@ -78,11 +87,14 @@ public class NodeMetricsCollectorTest {
         when(eventBus.send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class)))
                 .thenThrow(new IllegalArgumentException())
                 .then(invocationOnMock -> null);
+        when(kubeApi.getMetricsServerNodeMetrics(anyString())).thenReturn(mockNodeMetrics());
+        when(kubeApi.getMetricsServerPodsMetrics()).thenReturn(mockPodsMetrics());
 
         victim.collect();
 
+        verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
         verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(18)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(eventBus, times(26)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
     }
 
     private Single<JsonObject> mockNodes() {
@@ -105,5 +117,24 @@ public class NodeMetricsCollectorTest {
                 .build();
         metrics.setOptions(STATFUL_METRICS_OPTIONS);
         return Flowable.just(metrics, metrics, metrics);
+    }
+
+    private Single<JsonObject> mockNodeMetrics() {
+        return Single.just(new JsonObject()
+                .put("usage", new JsonObject()
+                        .put("cpu", "28m")
+                        .put("memory", "291283Ki")));
+    }
+
+    private Single<JsonObject> mockPodsMetrics() {
+        return Single.just(new JsonObject()
+                .put("items", new JsonArray()
+                        .add(new JsonObject()
+                                .put("containers", new JsonArray()
+                                        .add(new JsonObject()
+                                                .put("name", "container")
+                                                .put("usage", new JsonObject()
+                                                        .put("cpu", "28m")
+                                                        .put("memory", "291283Ki")))))));
     }
 }
