@@ -20,8 +20,8 @@ This collector was tested with Kubernetes version `1.10.9`, should work with all
 
 ## Features
 
-Collects a kubernetes' cluster metrics, translates the prometheus style metrics and sends them to statful, with the namespace `kubernetes. Currently
-supports [cAdvisor](https://github.com/google/cadvisor) and node metrics.
+Collects a kubernetes' cluster metrics, translates the prometheus style metrics and sends them to statful, with the namespace `kubernetes`. Currently
+supports node metrics, [cAdvisor](https://github.com/google/cadvisor) as well as [metrics-server](https://github.com/kubernetes-incubator/metrics-server) for cpu and memory metrics.
 
 ## Configuration
 
