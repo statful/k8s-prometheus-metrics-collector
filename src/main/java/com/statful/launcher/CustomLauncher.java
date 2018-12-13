@@ -41,8 +41,9 @@ public class CustomLauncher extends Launcher implements Loggable {
                 .setToken(statfulToken)
                 .setNamespace("kubernetes")
                 .setTags(tags)
-                .setFlushSize(250)
-                .setFlushInterval(10000);
+                .setFlushSize(1000)
+                .setFlushInterval(10000)
+                .setMaxBufferSize(15000);
 
         if (!timerAgg.isEmpty()) {
             metricsOptions.setTimerAggregations(timerAgg);

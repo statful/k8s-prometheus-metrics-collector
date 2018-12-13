@@ -5,8 +5,10 @@ import com.statful.utils.Pair;
 import io.reactivex.Flowable;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public abstract class Converter {
+    public abstract void convert(String text, List<Pair<String, String>> tags, Consumer<CustomMetric> customMetricConsumer);
     public abstract List<CustomMetric> convert(String text);
     public abstract List<CustomMetric> convert(String text, List<Pair<String, String>> tags);
     public abstract Flowable<CustomMetric> rxConvert(String text);

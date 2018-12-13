@@ -6,7 +6,7 @@
 
     <groupId>com.statful.collector</groupId>
     <artifactId>k8s-metrics-pipeline</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.11</version>
 
     <properties>
         <java.version>8</java.version>
@@ -20,7 +20,7 @@
         <junit-jupiter.version>5.3.1</junit-jupiter.version>
         <junit-platform-surefire-provider.version>1.3.1</junit-platform-surefire-provider.version>
         <junit-platform-launcher.version>1.3.1</junit-platform-launcher.version>
-        <statful-client-vertx.version>1.0.0-alpha-16</statful-client-vertx.version>
+        <statful-client-vertx.version>1.0.0-alpha-17</statful-client-vertx.version>
 
         <main.verticle>com.statful.collector.k8s.verticle.CollectionVerticle</main.verticle>
         <main.class>com.statful.launcher.CustomLauncher</main.class>

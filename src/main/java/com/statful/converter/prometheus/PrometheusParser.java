@@ -109,7 +109,8 @@ public class PrometheusParser extends Converter implements Loggable {
         }, BackpressureStrategy.BUFFER);
     }
 
-    private void convert(String text, List<Pair<String, String>> tags, Consumer<CustomMetric> customMetricConsumer) {
+    @Override
+    public void convert(String text, List<Pair<String, String>> tags, Consumer<CustomMetric> customMetricConsumer) {
         final String[] metricLines = splitByLines(text);
 
         String metricName = "";
