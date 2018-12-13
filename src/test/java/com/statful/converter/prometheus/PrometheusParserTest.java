@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TextParserTest {
+public class PrometheusParserTest {
     private static final String IGNORED_COUNT_METRIC =
             "# HELP ignore_metric_name some comment about the metric\n" +
                     "# TYPE ignore_metric_name counter\n" +
@@ -58,18 +58,18 @@ public class TextParserTest {
                     "metric_name_bucket{key=\"value\",key2=\"value2\"} 3e+2";
     private static final String ALL_METRICS = COUNT_METRIC + '\n' + GAUGE_METRIC + '\n' + SUMMARY_METRIC + '\n' + HISTOGRAM_METRIC;
 
-    private static final String EXPECTED_COUNT = "test.counter.metric_name 1.0 \\d.* 100\n" +
-            "test.counter.metric_name,key=value 2.0 \\d.* 100\n" +
-            "test.counter.metric_name,key2=value2,key=value 3.0 \\d.* 100\n" +
-            "test.counter.metric_name,key2=value2,key=value 0.03 \\d.* 100";
-    private static final String EXPECTED_GAUGE = "test.gauge.metric_name 1.0 \\d.* 100\n" +
-            "test.gauge.metric_name,key=value 2.0 \\d.* 100\n" +
-            "test.gauge.metric_name,key2=value2,key=value 3.0 \\d.* 100\n" +
-            "test.gauge.metric_name,key2=value2,key=value 300.0 \\d.* 100";
-    private static final String EXPECTED_SUMMARY = "test.counter.metric_name_sum,key=value 2.0 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name_count,key2=value2,key=value 3.0 \\d.* count,sum,10 100";
-    private static final String EXPECTED_HISTOGRAM = "test.counter.metric_name_sum,key=value 2.0 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name_count,key2=value2,key=value 3.0 \\d.* count,sum,10 100";
+    private static final String EXPECTED_COUNT = "test.counter.metric_name 1 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name,key=value 2 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name,key2=value2,key=value 3 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name,key2=value2,key=value 0.03 \\d.* count,sum,10 100";
+    private static final String EXPECTED_GAUGE = "test.gauge.metric_name 1 \\d.* 100\n" +
+            "test.gauge.metric_name,key=value 2 \\d.* 100\n" +
+            "test.gauge.metric_name,key2=value2,key=value 3 \\d.* 100\n" +
+            "test.gauge.metric_name,key2=value2,key=value 300 \\d.* 100";
+    private static final String EXPECTED_SUMMARY = "test.counter.metric_name_sum,key=value 2 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name_count,key2=value2,key=value 3 \\d.* count,sum,10 100";
+    private static final String EXPECTED_HISTOGRAM = "test.counter.metric_name_sum,key=value 2 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name_count,key2=value2,key=value 3 \\d.* count,sum,10 100";
     private static final String ALL_EXPECTATIONS = EXPECTED_COUNT + '\n' + EXPECTED_GAUGE + '\n' + EXPECTED_SUMMARY + '\n' + EXPECTED_HISTOGRAM;
 
     private static final StatfulMetricsOptions STATFUL_METRICS_OPTIONS = new StatfulMetricsOptions()

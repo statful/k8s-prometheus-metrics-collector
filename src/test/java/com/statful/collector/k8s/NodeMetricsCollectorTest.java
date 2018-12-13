@@ -49,33 +49,14 @@ public class NodeMetricsCollectorTest {
         when(kubeApi.getNodes()).thenReturn(mockNodes());
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
-        when(converter.rxConvert(eq("metrics"), anyList())).thenReturn(mockCustomMetrics());
         when(kubeApi.getMetricsServerNodeMetrics(anyString())).thenReturn(mockNodeMetrics());
         when(kubeApi.getMetricsServerPodsMetrics()).thenReturn(mockPodsMetrics());
 
         victim.collect();
 
         verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
-        verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(26)).send(eq(CustomMetricsConsumer.ADDRESS), captor.capture());
-    }
-
-    @Test
-    void collectWithErrorConverting() {
-        when(kubeApi.getNodes()).thenReturn(mockNodes());
-        when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
-        when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
-        when(converter.rxConvert(eq("metrics"), anyList()))
-                .thenReturn(Flowable.error(new IllegalArgumentException("Mock failure, should send all metrics anyway")))
-                .thenReturn(mockCustomMetrics());
-        when(kubeApi.getMetricsServerNodeMetrics(anyString())).thenReturn(mockNodeMetrics());
-        when(kubeApi.getMetricsServerPodsMetrics()).thenReturn(mockPodsMetrics());
-
-        victim.collect();
-
-        verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
-        verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(23)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(converter, times(6)).convert(eq("metrics"), anyList(), any());
+        verify(eventBus, times(8)).send(eq(CustomMetricsConsumer.ADDRESS), captor.capture());
     }
 
     @Test
@@ -83,7 +64,6 @@ public class NodeMetricsCollectorTest {
         when(kubeApi.getNodes()).thenReturn(mockNodes());
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
-        when(converter.rxConvert(eq("metrics"), anyList())).thenReturn(mockCustomMetrics());
         when(eventBus.send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class)))
                 .thenThrow(new IllegalArgumentException())
                 .then(invocationOnMock -> null);
@@ -93,8 +73,8 @@ public class NodeMetricsCollectorTest {
         victim.collect();
 
         verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
-        verify(converter, times(6)).rxConvert(eq("metrics"), anyList());
-        verify(eventBus, times(26)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(converter, times(6)).convert(eq("metrics"), anyList(), any());
+        verify(eventBus, times(7)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
     }
 
     private Single<JsonObject> mockNodes() {

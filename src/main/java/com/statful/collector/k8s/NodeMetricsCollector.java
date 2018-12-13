@@ -94,7 +94,7 @@ public class NodeMetricsCollector implements Loggable {
     private void getMetricsServerNodeMetrics(String node, List<Pair<String, String>> tags) {
         if (!metricsServerMetricsDisabled) {
             kubeApi.getMetricsServerNodeMetrics(node)
-                    .subscribe(metrics -> parseNodeMetrics(metrics, tags), e -> log().error("Failed to convert metrics-server metrics for node {0}", e, node));
+                    .subscribe(metrics -> buildUsageMetrics(metrics, tags), e -> log().error("Failed to convert metrics-server metrics for node {0}", e, node));
         }
     }
 
@@ -103,7 +103,9 @@ public class NodeMetricsCollector implements Loggable {
             kubeApi.getMetricsServerPodsMetrics()
                     .flattenAsFlowable(result -> result.getJsonArray("items"))
                     .cast(JsonObject.class)
-                    .subscribe(this::parsePodMetrics, e -> log().error("Failed to convert metrics-server metrics for pods", e));
+                    .flatMapIterable(podMetrics -> podMetrics.getJsonArray("containers"))
+                    .cast(JsonObject.class)
+                    .subscribe(container -> buildUsageMetrics(container, buildContainerTags(container)), e -> log().error("Failed to convert metrics-server metrics for pods", e));
         }
     }
 
@@ -114,39 +116,23 @@ public class NodeMetricsCollector implements Loggable {
                 .map(item -> item.getJsonObject(METADATA));
     }
 
-    private void parseNodeMetrics(JsonObject nodeMetrics, List<Pair<String, String>> tags) {
-        buildUsageMetrics(nodeMetrics, tags);
-    }
-
-    private void parsePodMetrics(JsonObject podMetrics) {
-        Flowable.fromIterable(podMetrics.getJsonArray("containers"))
-                .cast(JsonObject.class)
-                .forEach(container -> buildUsageMetrics(container, buildContainerTags(container)));
-    }
-
     private void buildUsageMetrics(JsonObject json, List<Pair<String, String>> tags) {
         final JsonObject usage = json.getJsonObject("usage");
 
         final long cpu = Long.parseLong(usage.getString("cpu").replaceAll("\\D+", ""));
         final long memory = Long.parseLong(usage.getString("memory").replaceAll("\\D+", ""));
 
-        final CustomMetric cpuMetric = new CustomMetric.Builder()
+        sendMetric(new CustomMetric.Builder()
                 .withMetricName("node.cpu")
-                .withValue(cpu)
-                .withTags(tags)
+                .withValue(cpu).withTags(tags)
                 .withMetricType(MetricType.COUNTER)
-                .build();
+                .build());
 
-        sendMetric(cpuMetric);
-
-        final CustomMetric memoryMetric = new CustomMetric.Builder()
+        sendMetric(new CustomMetric.Builder()
                 .withMetricName("node.memory")
-                .withValue(memory)
-                .withTags(tags)
+                .withValue(memory).withTags(tags)
                 .withMetricType(MetricType.COUNTER)
-                .build();
-
-        sendMetric(memoryMetric);
+                .build());
     }
 
     private void sendMetric(CustomMetric metric) {
