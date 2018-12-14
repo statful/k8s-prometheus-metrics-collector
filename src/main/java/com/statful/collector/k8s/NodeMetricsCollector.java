@@ -94,7 +94,7 @@ public class NodeMetricsCollector implements Loggable {
     private void getMetricsServerNodeMetrics(String node, List<Pair<String, String>> tags) {
         if (!metricsServerMetricsDisabled) {
             kubeApi.getMetricsServerNodeMetrics(node)
-                    .subscribe(metrics -> buildUsageMetrics(metrics, tags), e -> log().error("Failed to convert metrics-server metrics for node {0}", e, node));
+                    .subscribe(metrics -> buildUsageMetrics("node", metrics, tags), e -> log().error("Failed to convert metrics-server metrics for node {0}", e, node));
         }
     }
 
@@ -105,7 +105,7 @@ public class NodeMetricsCollector implements Loggable {
                     .cast(JsonObject.class)
                     .flatMapIterable(podMetrics -> podMetrics.getJsonArray("containers"))
                     .cast(JsonObject.class)
-                    .subscribe(container -> buildUsageMetrics(container, buildContainerTags(container)), e -> log().error("Failed to convert metrics-server metrics for pods", e));
+                    .subscribe(container -> buildUsageMetrics("pod", container, buildContainerTags(container)), e -> log().error("Failed to convert metrics-server metrics for pods", e));
         }
     }
 
@@ -116,20 +116,20 @@ public class NodeMetricsCollector implements Loggable {
                 .map(item -> item.getJsonObject(METADATA));
     }
 
-    private void buildUsageMetrics(JsonObject json, List<Pair<String, String>> tags) {
+    private void buildUsageMetrics(String name, JsonObject json, List<Pair<String, String>> tags) {
         final JsonObject usage = json.getJsonObject("usage");
 
         final long cpu = Long.parseLong(usage.getString("cpu").replaceAll("\\D+", ""));
         final long memory = Long.parseLong(usage.getString("memory").replaceAll("\\D+", ""));
 
         sendMetric(new CustomMetric.Builder()
-                .withMetricName("node.cpu")
+                .withMetricName(name + ".cpu")
                 .withValue(cpu).withTags(tags)
                 .withMetricType(MetricType.COUNTER)
                 .build());
 
         sendMetric(new CustomMetric.Builder()
-                .withMetricName("node.memory")
+                .withMetricName(name + ".memory")
                 .withValue(memory).withTags(tags)
                 .withMetricType(MetricType.COUNTER)
                 .build());
