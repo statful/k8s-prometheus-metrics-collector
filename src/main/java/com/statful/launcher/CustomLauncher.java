@@ -3,7 +3,6 @@ package com.statful.launcher;
 import com.statful.client.Aggregation;
 import com.statful.client.StatfulMetricsFactoryImpl;
 import com.statful.client.StatfulMetricsOptions;
-import com.statful.collector.k8s.clients.KubeApi;
 import com.statful.collector.k8s.utils.Loggable;
 import com.statful.utils.Pair;
 import io.vertx.core.Launcher;
@@ -87,18 +86,7 @@ public class CustomLauncher extends Launcher implements Loggable {
 
     @Override
     public void afterStartingVertx(Vertx vertx) {
-        deployKubernetsAPIClient(vertx);
         registerExceptionHandler(vertx);
-    }
-
-    private void deployKubernetsAPIClient(Vertx vertx) {
-        vertx.deployVerticle(KubeApi.class.getName(), result -> {
-            if (result.succeeded()) {
-                log().info("Kubernetes API client successfully deployed.");
-            } else {
-                log().error("Kubernetes API client failed to deploy.", result.cause());
-            }
-        });
     }
 
     private void registerExceptionHandler(Vertx vertx) {

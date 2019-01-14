@@ -2,11 +2,8 @@ package com.statful.collector.k8s;
 
 import com.statful.client.CustomMetric;
 import com.statful.client.CustomMetricsConsumer;
-import com.statful.client.MetricType;
-import com.statful.client.StatfulMetricsOptions;
 import com.statful.collector.k8s.clients.KubeApi;
 import com.statful.converter.Converter;
-import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -23,9 +20,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class NodeMetricsCollectorTest {
-
-    private static final StatfulMetricsOptions STATFUL_METRICS_OPTIONS = new StatfulMetricsOptions()
-            .setNamespace("test");
 
     @Mock
     private KubeApi.Client kubeApi;
@@ -87,16 +81,6 @@ public class NodeMetricsCollectorTest {
                 .reduce(new JsonArray(), JsonArray::add, JsonArray::addAll);
 
         return Single.just(new JsonObject().put("items", items));
-    }
-
-    private Flowable<CustomMetric> mockCustomMetrics() {
-        final CustomMetric metrics = new CustomMetric.Builder()
-                .withMetricType(MetricType.COUNTER)
-                .withMetricName("metrics")
-                .withValue(1)
-                .build();
-        metrics.setOptions(STATFUL_METRICS_OPTIONS);
-        return Flowable.just(metrics, metrics, metrics);
     }
 
     private Single<JsonObject> mockNodeMetrics() {
