@@ -48,6 +48,15 @@ You have to set the configuration properties using the container environment var
 | `kubernetes.api.port`              | `KUBE_API_PORT`                    |                                                                            | 443                                                  |
 | `kubernetes.api.cert`              | `KUBE_API_CERT`                    | Only used for port 443                                                     | /var/run/secrets/kubernetes.io/serviceaccount/ca.crt |
 | `kubernetes.api.token`             | `KUBE_API_TOKEN`                   | Only used for port 443                                                     | /var/run/secrets/kubernetes.io/serviceaccount/token  |
+| `development.logging.enabled`      | `DEV_LOGGING`                      | Enables more extensive logging                                             | false                                                |
+|                                    | `JVM_MAX_HEAP_SIZE`                |                                                                            | 256m                                                 |
+|                                    | `JVM_MIN_HEAP_SIZE`                |                                                                            | 128m                                                 |
+|                                    | `METASPACE_SIZE`                   |                                                                            | 64m                                                  |
+
+The following configurations can only be set with system variables, or passed environment variables when running the container 
+
+| Variable                           | Container env var                  | Description                                                                | Default                                              |
+| ---------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `staful.token`                     | `STATFUL_TOKEN`                    | `required` Authentication token to send to Statful                         |                                                      |
 | `statful.host`                     | `STATFUL_HOST`                     |                                                                            | api.statful.com                                      |
 | `statful.dryrun`                   | `STATFUL_DRYRUN`                   | Debug log metrics when flushing the buffer                                 | false                                                |
@@ -55,10 +64,6 @@ You have to set the configuration properties using the container environment var
 | `statful.timer.agg`                | `STATFUL_TIMER_AGG`                | Comma separated list of aggregations for timer metrics                     | AVG,P90,COUNT                                        |
 | `statful.counter.agg`              | `STATFUL_COUNTER_AGG`              | Comma separated list of aggregations for counter metrics                   | COUNT,SUM                                            |
 | `statful.gauge.agg`                | `STATFUL_GAUGE_AGG`                | Comma separated list of aggregations for gauge metrics                     | LAST,MAX,AVG                                         |
-| `development.logging.enabled`      | `DEV_LOGGING`                      | Enables more extensive logging                                             | false                                                |
-|                                    | `JVM_MAX_HEAP_SIZE`                |                                                                            | 256m                                                 |
-|                                    | `JVM_MIN_HEAP_SIZE`                |                                                                            | 128m                                                 |
-|                                    | `METASPACE_SIZE`                   |                                                                            | 64m                                                  |
 
 ## Installation
 
