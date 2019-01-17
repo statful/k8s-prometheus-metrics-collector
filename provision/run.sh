@@ -17,4 +17,25 @@ else
     COLLECTOR_OPTS="-Dcollector.period=${COLLECTOR_PERIOD:-60000} -Ddevelopment.logging.enabled=${DEV_LOGGING:-false} -Dcollector.cadvisor.disabled=${COLLECTOR_CADVISOR_DISABLED:-false} -Dcollector.nodes.disabled=${COLLECTOR_NODES_DISABLED:-false} -Dcollector.metricsserver.disabled=${COLLECTOR_METRICSSERVER_DISABLED:-false} -Dcollector.ignore=${COLLECTOR_IGNORE}"
 fi
 
-exec java ${HEAP_OPTS} ${JVM_OPTS} ${GC_OPTS} ${STATFUL_OPTS} ${KUBE_OPTS} ${COLLECTOR_OPTS} -Dstatful.timer.agg=${STATFUL_TIMER_AGG:-AVG,P90,COUNT} -Dstatful.counter.agg=${STATFUL_COUNTER_AGG:-COUNT,SUM} -Dstatful.gauge.agg=${STATFUL_GAUGE_AGG:-LAST,MAX,AVG} -jar /opt/${APPLICATION_NAME}/${APPLICATION_NAME}.jar
+exec java \
+    ${HEAP_OPTS} \
+    ${JVM_OPTS} \
+    ${GC_OPTS} \
+    ${STATFUL_OPTS} \
+    ${KUBE_OPTS} \
+    ${COLLECTOR_OPTS} \
+    -Dstatful.timer.agg=${STATFUL_TIMER_AGG:-AVG,P90,COUNT} \
+    -Dstatful.counter.agg=${STATFUL_COUNTER_AGG:-COUNT,SUM} \
+    -Dstatful.gauge.agg=${STATFUL_GAUGE_AGG:-LAST,MAX,AVG} \
+    -Dcollector.config.path=${COLLECTOR_CONFIG_PATH:-conf/config.json} \
+    -Dcollector.configmap.namespace=${COLLECTOR_CONFIGMAP_NAMESPACE:-default} \
+    -Dcollector.configmap.name=${COLLECTOR_CONFIGMAP_NAME:-k8s-metrics-collector} \
+    -Dcollector.secret.namespace=${COLLECTOR_SECRET_NAMESPACE:-default} \
+    -Dcollector.secret.name=${COLLECTOR_SECRET_NAME:-k8s-metrics-collector} \
+    -Dcollector.ignore.metric.regex=${COLLECTOR_IGNORE_METRIC_REGEX} \
+    -Dcollector.ignore.metric=${COLLECTOR_IGNORE_METRIC} \
+    -Dcollector.ignore.tags.regex=${COLLECTOR_IGNORE_TAGS_REGEX} \
+    -Dcollector.ignore.tags=${COLLECTOR_IGNORE_TAGS} \
+    -Dcollector.replacement.tag=${COLLECTOR_REPLACEMENT_TAG} \
+    -jar \
+    /opt/${APPLICATION_NAME}/${APPLICATION_NAME}.jar

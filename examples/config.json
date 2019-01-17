@@ -1,0 +1,38 @@
+{
+  "collector.ignore.metric.regex": "",
+  "collector.ignore.metric": [
+    "apiserver_client_certificate_expiration_seconds_bucket"
+  ],
+  "collector.ignore.tags.regex": "",
+  "collector.ignore.tags": [
+    "tagname",
+    "id",
+    "url"
+  ],
+  "collector.replacement.tag": [
+    {
+      "pattern": "\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}",
+      "replacement": "_uuid_"
+    },
+    {
+      "pattern": "-?\\w{9,10}-\\w{5}($|_)",
+      "replacement": ""
+    }
+  ],
+  "collector.period": 10000,
+  "collector.cadvisor.disabled": false,
+  "collector.nodes.disabled": false,
+  "collector.metricsserver.disabled": false,
+  "kubernetes.api.host": "localhost",
+  "kubernetes.api.port": 8001,
+  "kubernetes.api.cert": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+  "kubernetes.api.token": "/var/run/secrets/kubernetes.io/serviceaccount/token",
+  "staful.token": "<token>",
+  "statful.host": "api.statful.com",
+  "statful.dryrun": true,
+  "statful.environment": "production",
+  "statful.timer.agg": "AVG,P90,COUNT",
+  "statful.counter.agg": "COUNT,SUM",
+  "statful.gauge.agg": "LAST,MAX,AVG",
+  "development.logging.enabled": false
+}

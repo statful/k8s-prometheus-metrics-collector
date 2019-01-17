@@ -27,7 +27,6 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String KUBERNETES_API_TOKEN_KEY = "kubernetes.api.token";
 
     private static final String DEFAULT_KUBE_API_HOST = "kubernetes.default.svc.cluster.local";
-    private static final String DEFAULT_KUBE_API_PORT = "443";
     private static final String DEFAULT_KUBE_API_CERT_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     private static final String DEFAULT_KUBE_API_TOKEN_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
@@ -44,47 +43,58 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String GET_METRICS_SERVER_PODS_METRICS = "getMetricsServerPodsMetrics";
 
     private static final int SSL_PORT = 443;
+    private static final int DEFAULT_KUBE_API_PORT = SSL_PORT;
 
     private WebClient client;
     private boolean isDevLoggingEnabled;
     private Buffer token;
     private boolean useAuthentication;
 
+    private JsonObject config;
+
+    public KubeApi(JsonObject config) {
+        this.config = config;
+    }
+
     @Override
     public void start(Future<Void> startFuture) {
-        isDevLoggingEnabled = Boolean.valueOf(System.getProperty(DEV_MODE_KEY, Boolean.FALSE.toString()));
-        final String host = System.getProperty(KUBERNETES_API_HOST_KEY, DEFAULT_KUBE_API_HOST);
-        final int port = Integer.valueOf(System.getProperty(KUBERNETES_API_PORT_KEY, DEFAULT_KUBE_API_PORT));
+        isDevLoggingEnabled = config.getBoolean(DEV_MODE_KEY, Boolean.FALSE);
+        final String host = config.getString(KUBERNETES_API_HOST_KEY, DEFAULT_KUBE_API_HOST);
+        final int port = config.getInteger(KUBERNETES_API_PORT_KEY, DEFAULT_KUBE_API_PORT);
 
-        initWebClient(host, port);
+        initWebClient(config, host, port);
         registerConsumers();
 
         if (port == SSL_PORT) {
-            useAuthentication = true;
-            final String tokenLocation = System.getProperty(KUBERNETES_API_TOKEN_KEY, DEFAULT_KUBE_API_TOKEN_LOCATION);
-            vertx.fileSystem().rxReadFile(tokenLocation)
-                    .subscribe(file -> {
-                        this.token = file;
-                        startFuture.complete();
-                    }, error -> {
-                        log().error("Error reading token file {}", error, tokenLocation);
-                        startFuture.fail(error);
-                    });
+            readToken(startFuture, config);
         } else {
             startFuture.complete();
         }
     }
 
-    private void initWebClient(String host, int port) {
-        WebClientOptions options = buildWebClientOptions(host, port);
+    private void readToken(Future<Void> startFuture, JsonObject config) {
+        useAuthentication = true;
+        final String tokenLocation = config.getString(KUBERNETES_API_TOKEN_KEY, DEFAULT_KUBE_API_TOKEN_LOCATION);
+        vertx.fileSystem().rxReadFile(tokenLocation)
+                .subscribe(file -> {
+                    this.token = file;
+                    startFuture.complete();
+                }, error -> {
+                    log().error("Error reading token file {}", error, tokenLocation);
+                    startFuture.fail(error);
+                });
+    }
+
+    private void initWebClient(JsonObject config, String host, int port) {
+        WebClientOptions options = buildWebClientOptions(config, host, port);
 
         client = WebClient.create(vertx, options);
     }
 
-    private WebClientOptions buildWebClientOptions(String host, int port) {
+    private WebClientOptions buildWebClientOptions(JsonObject config, String host, int port) {
         WebClientOptions options;
         if (port == 443) {
-            final String certLocation = System.getProperty(KUBERNETES_API_CERT_KEY, DEFAULT_KUBE_API_CERT_LOCATION);
+            final String certLocation = config.getString(KUBERNETES_API_CERT_KEY, DEFAULT_KUBE_API_CERT_LOCATION);
 
             options = new WebClientOptions()
                     .setDefaultHost(host)

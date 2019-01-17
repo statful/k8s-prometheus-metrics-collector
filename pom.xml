@@ -6,7 +6,7 @@
 
     <groupId>com.statful.collector</groupId>
     <artifactId>k8s-metrics-pipeline</artifactId>
-    <version>1.0.12</version>
+    <version>1.1.0</version>
 
     <properties>
         <java.version>8</java.version>
@@ -58,6 +58,16 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-web</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-config-kubernetes-configmap</artifactId>
             <version>${vertx.version}</version>
         </dependency>
         <dependency>

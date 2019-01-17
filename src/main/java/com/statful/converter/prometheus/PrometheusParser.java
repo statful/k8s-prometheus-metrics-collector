@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 public class PrometheusParser extends Converter implements Loggable {
@@ -32,6 +31,8 @@ public class PrometheusParser extends Converter implements Loggable {
     private static final String TAGS = "tags";
     private static final String COUNTER = "counter";
     private static final String GAUGE = "gauge";
+    private static final String SUM_SUFFIX = "_sum";
+    private static final String COUNT_SUFFIX = "_count";
 
     private static final Map<String, MetricType> METRIC_TYPE_CONVERTER = new ImmutableMap.Builder<String, MetricType>()
             .put(HISTOGRAM, MetricType.TIMER)
@@ -40,23 +41,22 @@ public class PrometheusParser extends Converter implements Loggable {
             .put(GAUGE, MetricType.GAUGE)
             .build();
 
-    private Pattern ignorePattern;
-    private boolean shouldFilter;
+    private final List<Pair<Pattern, String>> tagValueReplacements;
+    private final Pattern ignoreMetricNamesPattern;
+    private final boolean shouldFilterMetricNamesByPattern;
+    private final Set<String> ignoreMetricNames;
+    private final Pattern ignoreTagNamesPattern;
+    private final boolean shouldFilterTagNamesByPattern;
+    private final Set<String> ignoreTagNames;
 
-    public PrometheusParser(String ignorePattern) {
-        if (ignorePattern != null && !ignorePattern.isEmpty()) {
-            try {
-                this.ignorePattern = Pattern.compile(ignorePattern);
-                this.shouldFilter = true;
-            } catch (PatternSyntaxException e) {
-                this.ignorePattern = null;
-                this.shouldFilter = false;
-                log().error("Invalid ignore pattern regex", e);
-            }
-        } else {
-            this.ignorePattern = null;
-            this.shouldFilter = false;
-        }
+    public PrometheusParser(PrometheusParserOptions options) {
+        this.tagValueReplacements = options.getTagValueReplacements();
+        this.ignoreMetricNamesPattern = options.getIgnoreMetricNamesPattern();
+        this.shouldFilterMetricNamesByPattern = options.shouldFilterMetricNamesByPattern();
+        this.ignoreMetricNames = options.getIgnoreMetricNames();
+        this.ignoreTagNamesPattern = options.getIgnoreTagNamesPattern();
+        this.shouldFilterTagNamesByPattern = options.shouldFilterTagNamesByPattern();
+        this.ignoreTagNames = options.getIgnoreTagNames();
     }
 
     @Override
@@ -111,25 +111,30 @@ public class PrometheusParser extends Converter implements Loggable {
 
     @Override
     public void convert(String text, List<Pair<String, String>> tags, Consumer<CustomMetric> customMetricConsumer) {
-        final String[] metricLines = splitByLines(text);
+        convertLines(tags, customMetricConsumer, splitByLines(text));
+    }
 
+    private void convertLines(List<Pair<String, String>> tags, Consumer<CustomMetric> customMetricConsumer, String[] metricLines) {
         String metricName = "";
         String metricType = "";
+        boolean shouldIgnore = false;
 
         for (String line : metricLines) {
-            // Ignore metrics with names that match the given regex
-            if (shouldFilter && !metricName.isEmpty() && ignorePattern.matcher(metricName).find()) {
-                continue;
-            }
-
             if (line.startsWith("# TYPE")) {
                 final Matcher matcher = TYPE_PATTERN.matcher(line);
 
                 while (matcher.find()) {
+                    shouldIgnore = false;
                     metricName = matcher.group(NAME);
                     metricType = matcher.group(TYPE);
                 }
             } else if (line.charAt(0) != '#') {
+                // Ignore metrics with names that match the given regex
+                if (shouldIgnore || filterMetricName(metricName)) {
+                    shouldIgnore = true;
+                    continue;
+                }
+
                 final Matcher matcher = SAMPLE_PATTERN.matcher(line);
 
                 while (matcher.find()) {
@@ -145,13 +150,6 @@ public class PrometheusParser extends Converter implements Loggable {
                 }
             }
         }
-    }
-
-    private boolean isHistogramAggregationOrValidType(String metricType, String sampleMetricName) {
-        final boolean isCounterOrGauge = metricType.equals(COUNTER) || metricType.equals(GAUGE);
-        final boolean isSummaryOrHistogram = metricType.equals(SUMMARY) || metricType.equals(HISTOGRAM);
-        final boolean isAggregation = sampleMetricName.endsWith("_sum") || sampleMetricName.endsWith("_count");
-        return isCounterOrGauge || (isSummaryOrHistogram && isAggregation);
     }
 
     private String[] splitByLines(String text) {
@@ -189,17 +187,50 @@ public class PrometheusParser extends Converter implements Loggable {
         }
     }
 
-    private static List<Pair<String, String>> getTags(String tagGroup) {
+    private List<Pair<String, String>> getTags(String tagGroup) {
         if (!Strings.isNullOrEmpty(tagGroup)) {
             final String[] tags = tagGroup.split(",");
 
             return Arrays.stream(tags)
                     .map(tag -> tag.split("="))
-                    .map(tag -> new Pair<>(tag[0], tag[1].substring(1, tag[1].length() - 1)))
+                    .filter(tag -> !filterTagName(tag[0]))
+                    .map(tag -> new Pair<>(tag[0], getTagValue(stripQuotes(tag[1]))))
                     .filter(tag -> !Strings.isNullOrEmpty(tag.getRight()))
                     .collect(Collectors.toList());
         }
 
         return new ArrayList<>();
+    }
+
+    private String getTagValue(String s) {
+        for (Pair<Pattern, String> entry : tagValueReplacements) {
+            s = entry.getLeft().matcher(s).replaceAll(entry.getRight());
+        }
+        return s;
+    }
+
+    private boolean isHistogramAggregationOrValidType(String metricType, String sampleMetricName) {
+        final boolean isCounterOrGauge = metricType.equals(COUNTER) || metricType.equals(GAUGE);
+        final boolean isSummaryOrHistogram = metricType.equals(SUMMARY) || metricType.equals(HISTOGRAM);
+        final boolean isAggregation = sampleMetricName.endsWith(SUM_SUFFIX) || sampleMetricName.endsWith(COUNT_SUFFIX);
+        return isCounterOrGauge || (isSummaryOrHistogram && isAggregation);
+    }
+
+    private boolean filterMetricName(String metricName) {
+        return !metricName.isEmpty() && (ignoreMetricNames.contains(metricName) || (shouldFilterMetricNamesByPattern && ignoreMetricNamesPattern.matcher(metricName).find()));
+    }
+
+    private boolean filterTagName(String tagName) {
+        return !tagName.isEmpty() && (ignoreTagNames.contains(tagName) || (shouldFilterTagNamesByPattern && ignoreTagNamesPattern.matcher(tagName).find()));
+    }
+
+    private String stripQuotes(String str) {
+        if (str.startsWith("\"")) {
+            str = str.substring(1);
+        }
+        if (str.endsWith("\"")) {
+            str = str.substring(0, str.length() - 1);
+        }
+        return str;
     }
 }
