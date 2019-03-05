@@ -6,7 +6,7 @@
 
     <groupId>com.statful.collector</groupId>
     <artifactId>k8s-metrics-pipeline</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 
     <properties>
         <java.version>8</java.version>
@@ -148,6 +148,7 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>META-INF/services/io.vertx.core.spi.VerticleFactory</resource>
+                                    <resource>META-INF/services/io.vertx.config.spi.ConfigStoreFactory</resource>
                                 </transformer>
                             </transformers>
                             <artifactSet>
