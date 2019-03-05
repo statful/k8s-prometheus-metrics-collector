@@ -61,9 +61,6 @@ The following configurations can only be set with system variables, or passed en
 | `statful.host`                     | `STATFUL_HOST`                     |                                                                            | api.statful.com                                      |
 | `statful.dryrun`                   | `STATFUL_DRYRUN`                   | Debug log metrics when flushing the buffer                                 | false                                                |
 | `statful.environment`              | `STATFUL_ENVIRONMENT`              | Set environment tag                                                        |                                                      |
-| `statful.timer.agg`                | `STATFUL_TIMER_AGG`                | Comma separated list of aggregations for timer metrics                     | AVG,P90,COUNT                                        |
-| `statful.counter.agg`              | `STATFUL_COUNTER_AGG`              | Comma separated list of aggregations for counter metrics                   | COUNT,SUM                                            |
-| `statful.gauge.agg`                | `STATFUL_GAUGE_AGG`                | Comma separated list of aggregations for gauge metrics                     | LAST,MAX,AVG                                         |
 
 ## Installation
 

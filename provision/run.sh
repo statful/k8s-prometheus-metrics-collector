@@ -24,9 +24,6 @@ exec java \
     ${STATFUL_OPTS} \
     ${KUBE_OPTS} \
     ${COLLECTOR_OPTS} \
-    -Dstatful.timer.agg=${STATFUL_TIMER_AGG:-AVG,P90,COUNT} \
-    -Dstatful.counter.agg=${STATFUL_COUNTER_AGG:-COUNT,SUM} \
-    -Dstatful.gauge.agg=${STATFUL_GAUGE_AGG:-LAST,MAX,AVG} \
     -Dcollector.config.path=${COLLECTOR_CONFIG_PATH:-conf/config.json} \
     -Dcollector.configmap.namespace=${COLLECTOR_CONFIGMAP_NAMESPACE:-default} \
     -Dcollector.configmap.name=${COLLECTOR_CONFIGMAP_NAME:-k8s-metrics-collector} \
