@@ -1,6 +1,5 @@
 package com.statful.launcher;
 
-import com.statful.client.Aggregation;
 import com.statful.client.StatfulMetricsFactoryImpl;
 import com.statful.client.StatfulMetricsOptions;
 import com.statful.collector.k8s.utils.Loggable;
@@ -10,7 +9,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.nonNull;
@@ -21,9 +19,6 @@ public class CustomLauncher extends Launcher implements Loggable {
     private String statfulHost;
     private boolean statfulDryRun;
     private final List<Pair<String, String>> tags = new ArrayList<>(1);
-    private final List<Aggregation> timerAgg = new ArrayList<>();
-    private final List<Aggregation> counterAgg = new ArrayList<>();
-    private final List<Aggregation> gaugeAgg = new ArrayList<>();
 
     public static void main(String[] args) {
         new CustomLauncher().dispatch(args);
@@ -43,18 +38,6 @@ public class CustomLauncher extends Launcher implements Loggable {
                 .setFlushSize(1000)
                 .setFlushInterval(10000)
                 .setMaxBufferSize(15000);
-
-        if (!timerAgg.isEmpty()) {
-            metricsOptions.setTimerAggregations(timerAgg);
-        }
-
-        if (!counterAgg.isEmpty()) {
-            metricsOptions.setCounterAggregations(counterAgg);
-        }
-
-        if (!gaugeAgg.isEmpty()) {
-            metricsOptions.setGaugeAggregations(gaugeAgg);
-        }
 
         metricsOptions.setFactory(new StatfulMetricsFactoryImpl());
 

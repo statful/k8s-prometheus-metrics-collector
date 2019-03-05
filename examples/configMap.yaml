@@ -38,7 +38,4 @@ data:
   statful.host: api.statful.com
   statful.dryrun: false
   statful.environment: production
-  statful.timer.agg: AVG,P90,COUNT
-  statful.counter.agg: COUNT,SUM
-  statful.gauge.agg: LAST,MAX,AVG
   development.logging.enabled: false
