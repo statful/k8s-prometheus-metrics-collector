@@ -144,7 +144,7 @@ public class NodeMetricsCollector implements Loggable {
     }
 
     private ArrayList<Pair<String, String>> buildContainerTags(JsonObject container) {
-        return Lists.newArrayList(new Pair<>("container", container.getString("name")));
+        return Lists.newArrayList(new Pair<>("pod_name", container.getString("name")));
     }
 
     private List<Pair<String, String>> buildNodeTags(JsonObject node) {
