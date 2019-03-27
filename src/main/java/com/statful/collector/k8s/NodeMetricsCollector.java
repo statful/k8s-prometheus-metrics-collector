@@ -142,7 +142,6 @@ public class NodeMetricsCollector implements Loggable {
                             .map(podCount -> new CustomMetric.Builder()
                                     .withMetricName("pod")
                                     .withValue(podCount)
-                                    .withMetricType(MetricType.GAUGE)
                                     .withAggregations(emptyList())
                                     .withTags(tags)
                                     .build())
@@ -170,22 +169,22 @@ public class NodeMetricsCollector implements Loggable {
 
         return Observable.fromArray(
                 new CustomMetric.Builder()
-                        .withMetricName("pod.cpu.limit").withMetricType(MetricType.COUNTER)
+                        .withMetricName("pod.cpu.limit")
                         .withValue(ResourceQuantityParser.parseCpuResource(limits.getString("cpu", "")))
                         .withTags(containerTags).withAggregations(emptyList())
                         .build(),
                 new CustomMetric.Builder()
-                        .withMetricName("pod.memory.limit").withMetricType(MetricType.COUNTER)
+                        .withMetricName("pod.memory.limit")
                         .withValue(ResourceQuantityParser.parseMemoryResource(limits.getString("memory", "")))
                         .withTags(containerTags).withAggregations(emptyList())
                         .build(),
                 new CustomMetric.Builder()
-                        .withMetricName("pod.cpu.request").withMetricType(MetricType.COUNTER)
+                        .withMetricName("pod.cpu.request")
                         .withValue(ResourceQuantityParser.parseCpuResource(requests.getString("cpu", "")))
                         .withTags(containerTags).withAggregations(emptyList())
                         .build(),
                 new CustomMetric.Builder()
-                        .withMetricName("pod.memory.request").withMetricType(MetricType.COUNTER)
+                        .withMetricName("pod.memory.request")
                         .withValue(ResourceQuantityParser.parseMemoryResource(requests.getString("memory", "")))
                         .withTags(containerTags).withAggregations(emptyList())
                         .build());
