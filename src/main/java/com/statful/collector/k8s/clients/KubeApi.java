@@ -31,12 +31,14 @@ public class KubeApi extends AbstractVerticle implements Loggable {
     private static final String DEFAULT_KUBE_API_TOKEN_LOCATION = "/var/run/secrets/kubernetes.io/serviceaccount/token";
 
     private static final String BASE_NODE = "/api/v1/nodes/";
+    private static final String BASE_POD = "/api/v1/pods/";
     private static final String METRICS = "/proxy/metrics";
     private static final String CADVISOR_METRICS = "/proxy/metrics/cadvisor";
     private static final String METRICS_SERVER_PODS = "/apis/metrics.k8s.io/v1beta1/pods/";
     private static final String METRICS_SERVER_NODES = "/apis/metrics.k8s.io/v1beta1/nodes/";
 
     private static final String GET_NODES = "getNodes";
+    private static final String GET_PODS = "getPods";
     private static final String GET_NODE_METRICS = "getNodeMetrics";
     private static final String GET_CADVISOR_NODE_METRICS = "getCAdvisorNodeMetrics";
     private static final String GET_METRICS_SERVER_NODE_METRICS = "getMetricsServerNodeMetrics";
@@ -114,6 +116,7 @@ public class KubeApi extends AbstractVerticle implements Loggable {
 
     private void registerConsumers() {
         vertx.eventBus().consumer(GET_NODES, this::getNodes);
+        vertx.eventBus().consumer(GET_PODS, this::getPods);
         vertx.eventBus().consumer(GET_NODE_METRICS, this::getNodeMetrics);
         vertx.eventBus().consumer(GET_CADVISOR_NODE_METRICS, this::getCAdvisorNodeMetrics);
         vertx.eventBus().consumer(GET_METRICS_SERVER_NODE_METRICS, this::getMetricsServerNodeMetrics);
@@ -122,6 +125,10 @@ public class KubeApi extends AbstractVerticle implements Loggable {
 
     private void getNodes(Message<String> message) {
         request(BASE_NODE, message, HttpResponse::bodyAsJsonObject);
+    }
+
+    private void getPods(Message<String> message) {
+        request(BASE_POD, message, HttpResponse::bodyAsJsonObject);
     }
 
     private void getNodeMetrics(Message<String> message) {
@@ -183,6 +190,11 @@ public class KubeApi extends AbstractVerticle implements Loggable {
 
         public Single<JsonObject> getNodes() {
             return eventBus.<JsonObject>rxSend(KubeApi.GET_NODES, "")
+                    .map(Message::body);
+        }
+
+        public Single<JsonObject> getPods() {
+            return eventBus.<JsonObject>rxSend(KubeApi.GET_PODS, "")
                     .map(Message::body);
         }
 

@@ -40,6 +40,7 @@ public class NodeMetricsCollectorTest {
     void collect() {
         ArgumentCaptor<CustomMetric> captor = ArgumentCaptor.forClass(CustomMetric.class);
 
+        when(kubeApi.getPods()).thenReturn(mockPods());
         when(kubeApi.getNodes()).thenReturn(mockNodes());
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
@@ -50,11 +51,12 @@ public class NodeMetricsCollectorTest {
 
         verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
         verify(converter, times(6)).convert(eq("metrics"), anyList(), any());
-        verify(eventBus, times(8)).send(eq(CustomMetricsConsumer.ADDRESS), captor.capture());
+        verify(eventBus, times(18)).send(eq(CustomMetricsConsumer.ADDRESS), captor.capture());
     }
 
     @Test
     void collectWithErrorSending() {
+        when(kubeApi.getPods()).thenReturn(mockPods());
         when(kubeApi.getNodes()).thenReturn(mockNodes());
         when(kubeApi.getNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
         when(kubeApi.getCAdvisorNodeMetrics(anyString())).thenReturn(Single.just("metrics"));
@@ -68,7 +70,29 @@ public class NodeMetricsCollectorTest {
 
         verify(kubeApi, times(3)).getMetricsServerNodeMetrics(anyString());
         verify(converter, times(6)).convert(eq("metrics"), anyList(), any());
-        verify(eventBus, times(7)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+        verify(eventBus, times(17)).send(eq(CustomMetricsConsumer.ADDRESS), any(CustomMetric.class));
+    }
+
+    private Single<JsonObject> mockPods() {
+        final JsonArray items = Stream.of("pod1-1234567-1234", "pod2-1234567-1234", "pod1-1234567-1234")
+                .map(node -> new JsonObject()
+                        .put("name", node))
+                .map(metadata -> new JsonObject()
+                        .put("metadata", metadata)
+                        .put("spec", new JsonObject()
+                                .put("containers", new JsonArray()
+                                        .add(new JsonObject()
+                                                .put("name", "container1")
+                                                .put("resources", new JsonObject()
+                                                        .put("limits", new JsonObject()
+                                                                .put("cpu", "2")
+                                                                .put("memory", "2Gi"))
+                                                        .put("requests", new JsonObject()
+                                                                .put("cpu", "0.5")
+                                                                .put("memory", "1G")))))))
+                .reduce(new JsonArray(), JsonArray::add, JsonArray::addAll);
+
+        return Single.just(new JsonObject().put("items", items));
     }
 
     private Single<JsonObject> mockNodes() {

@@ -7,14 +7,20 @@ import com.statful.client.MetricType;
 import com.statful.collector.k8s.clients.KubeApi;
 import com.statful.collector.k8s.utils.Loggable;
 import com.statful.converter.Converter;
+import com.statful.converter.util.ResourceQuantityParser;
 import com.statful.utils.Pair;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableSource;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import static java.util.Collections.emptyList;
 
 public class NodeMetricsCollector implements Loggable {
     private static final String ITEMS = "items";
@@ -23,6 +29,8 @@ public class NodeMetricsCollector implements Loggable {
     private static final String ROLE = "role";
     private static final String LABELS = "labels";
     private static final String KUBERNETES_IO_ROLE = "kubernetes.io/role";
+
+    private static final Pattern POD_GENERATED = Pattern.compile("-?\\w{9,10}-\\w{5}($|_)");
 
     private final KubeApi.Client kubeApi;
     private final EventBus eventBus;
@@ -48,7 +56,8 @@ public class NodeMetricsCollector implements Loggable {
                                 Converter converter,
                                 Boolean cAdvisorMetricsDisabled,
                                 Boolean nodeMetricsDisabled,
-                                Boolean metricsServerMetricsDisabled) {
+                                Boolean metricsServerMetricsDisabled,
+                                Boolean podMetricsDisabled) {
         this.kubeApi = kubeApi;
         this.eventBus = eventBus;
         this.converter = converter;
@@ -59,6 +68,7 @@ public class NodeMetricsCollector implements Loggable {
 
     public void collect() {
         getMetricsServerPodsMetrics();
+        getPodMetrics();
 
         getNodeMetadata()
                 .flatMapCompletable(this::getNodeMetrics, true, 1)
@@ -114,6 +124,76 @@ public class NodeMetricsCollector implements Loggable {
                 .flattenAsFlowable(response -> response.getJsonArray(ITEMS))
                 .cast(JsonObject.class)
                 .map(item -> item.getJsonObject(METADATA));
+    }
+
+    private void getPodMetrics() {
+        kubeApi.getPods()
+                .flattenAsFlowable(response -> response.getJsonArray(ITEMS))
+                .cast(JsonObject.class)
+                .groupBy(this::trimPodGeneratedName)
+                .subscribe(pods -> {
+                    final String podName = pods.getKey();
+
+                    final ArrayList<Pair<String, String>> tags = Lists.newArrayList(new Pair<>("pod_name", podName));
+
+                    final Flowable<JsonObject> cachedPods = pods.cache();
+
+                    cachedPods.count()
+                            .map(podCount -> new CustomMetric.Builder()
+                                    .withMetricName("pod")
+                                    .withValue(podCount)
+                                    .withMetricType(MetricType.GAUGE)
+                                    .withAggregations(emptyList())
+                                    .withTags(tags)
+                                    .build())
+                            .subscribe(this::sendMetric, e -> log().error("Failed to convert count metrics for pods", e));
+
+                    cachedPods
+                            .first(new JsonObject())
+                            .map(pod -> pod.getJsonObject("spec"))
+                            .flattenAsObservable(podSpec -> podSpec.getJsonArray("containers"))
+                            .cast(JsonObject.class)
+                            .flatMap(container -> getContainerResourceMetrics(tags, container))
+                            .subscribe(this::sendMetric, e -> log().error("Failed to convert resource metrics for pods", e));
+                }, e -> log().error("Failed to convert metrics for pods", e));
+    }
+
+    private ObservableSource<? extends CustomMetric> getContainerResourceMetrics(ArrayList<Pair<String, String>> tags, JsonObject container) {
+        final String containerName = container.getString("name");
+        final JsonObject resources = container.getJsonObject("resources");
+
+        final ArrayList<Pair<String, String>> containerTags = new ArrayList<>(tags);
+        containerTags.add(new Pair<>("container_name", containerName));
+
+        final JsonObject limits = resources.getJsonObject("limits", new JsonObject());
+        final JsonObject requests = resources.getJsonObject("requests", new JsonObject());
+
+        return Observable.fromArray(
+                new CustomMetric.Builder()
+                        .withMetricName("pod.cpu.limit").withMetricType(MetricType.COUNTER)
+                        .withValue(ResourceQuantityParser.parseCpuResource(limits.getString("cpu", "")))
+                        .withTags(containerTags).withAggregations(emptyList())
+                        .build(),
+                new CustomMetric.Builder()
+                        .withMetricName("pod.memory.limit").withMetricType(MetricType.COUNTER)
+                        .withValue(ResourceQuantityParser.parseMemoryResource(limits.getString("memory", "")))
+                        .withTags(containerTags).withAggregations(emptyList())
+                        .build(),
+                new CustomMetric.Builder()
+                        .withMetricName("pod.cpu.request").withMetricType(MetricType.COUNTER)
+                        .withValue(ResourceQuantityParser.parseCpuResource(requests.getString("cpu", "")))
+                        .withTags(containerTags).withAggregations(emptyList())
+                        .build(),
+                new CustomMetric.Builder()
+                        .withMetricName("pod.memory.request").withMetricType(MetricType.COUNTER)
+                        .withValue(ResourceQuantityParser.parseMemoryResource(requests.getString("memory", "")))
+                        .withTags(containerTags).withAggregations(emptyList())
+                        .build());
+    }
+
+    private String trimPodGeneratedName(JsonObject pod) {
+        final String string = pod.getJsonObject(METADATA).getString(NAME);
+        return POD_GENERATED.matcher(string).replaceAll("");
     }
 
     private void buildUsageMetrics(String name, JsonObject json, List<Pair<String, String>> tags) {
