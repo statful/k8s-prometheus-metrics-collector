@@ -80,6 +80,7 @@ public class NodeMetricsCollectorTest {
                 .map(metadata -> new JsonObject()
                         .put("metadata", metadata)
                         .put("spec", new JsonObject()
+                                .put("nodeName", "node1")
                                 .put("containers", new JsonArray()
                                         .add(new JsonObject()
                                                 .put("name", "container1")
