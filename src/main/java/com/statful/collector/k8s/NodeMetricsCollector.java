@@ -13,6 +13,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
@@ -150,19 +151,24 @@ public class NodeMetricsCollector implements Loggable {
                     cachedPods
                             .first(new JsonObject())
                             .map(pod -> pod.getJsonObject("spec"))
-                            .flattenAsObservable(podSpec -> podSpec.getJsonArray("containers"))
-                            .cast(JsonObject.class)
-                            .flatMap(container -> getContainerResourceMetrics(tags, container))
+                            .flatMapObservable(podSpec -> {
+                                final JsonArray containers = podSpec.getJsonArray("containers");
+                                final String nodeName = podSpec.getString("nodeName");
+                                return Observable.fromIterable(containers)
+                                        .cast(JsonObject.class)
+                                        .flatMap(container -> getContainerResourceMetrics(tags, container, nodeName));
+                            })
                             .subscribe(this::sendMetric, e -> log().error("Failed to convert resource metrics for pods", e));
                 }, e -> log().error("Failed to convert metrics for pods", e));
     }
 
-    private ObservableSource<? extends CustomMetric> getContainerResourceMetrics(ArrayList<Pair<String, String>> tags, JsonObject container) {
+    private ObservableSource<? extends CustomMetric> getContainerResourceMetrics(ArrayList<Pair<String, String>> tags, JsonObject container, String nodeName) {
         final String containerName = container.getString("name");
         final JsonObject resources = container.getJsonObject("resources");
 
         final ArrayList<Pair<String, String>> containerTags = new ArrayList<>(tags);
         containerTags.add(new Pair<>("container_name", containerName));
+        containerTags.add(new Pair<>("node", nodeName));
 
         final JsonObject limits = resources.getJsonObject("limits", new JsonObject());
         final JsonObject requests = resources.getJsonObject("requests", new JsonObject());
