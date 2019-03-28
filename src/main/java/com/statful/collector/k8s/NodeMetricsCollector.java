@@ -19,6 +19,8 @@ import io.vertx.reactivex.core.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.emptyList;
@@ -41,6 +43,8 @@ public class NodeMetricsCollector implements Loggable {
     private final Boolean nodeMetricsDisabled;
     private final Boolean metricsServerMetricsDisabled;
 
+    private final Map<String, List<Pair<String, String>>> nodeTagsMap;
+
     public NodeMetricsCollector(KubeApi.Client kubeApi,
                                 EventBus eventBus,
                                 Converter converter) {
@@ -50,6 +54,7 @@ public class NodeMetricsCollector implements Loggable {
         this.cAdvisorMetricsDisabled = Boolean.valueOf(System.getProperty("collector.cadvisor.disabled", "false"));
         this.nodeMetricsDisabled = Boolean.valueOf(System.getProperty("collector.nodes.disabled", "false"));
         this.metricsServerMetricsDisabled = Boolean.valueOf(System.getProperty("collector.metricsserver.disabled", "false"));
+        this.nodeTagsMap = new ConcurrentHashMap<>();
     }
 
     public NodeMetricsCollector(KubeApi.Client kubeApi,
@@ -57,14 +62,14 @@ public class NodeMetricsCollector implements Loggable {
                                 Converter converter,
                                 Boolean cAdvisorMetricsDisabled,
                                 Boolean nodeMetricsDisabled,
-                                Boolean metricsServerMetricsDisabled,
-                                Boolean podMetricsDisabled) {
+                                Boolean metricsServerMetricsDisabled) {
         this.kubeApi = kubeApi;
         this.eventBus = eventBus;
         this.converter = converter;
         this.cAdvisorMetricsDisabled = cAdvisorMetricsDisabled;
         this.nodeMetricsDisabled = nodeMetricsDisabled;
         this.metricsServerMetricsDisabled = metricsServerMetricsDisabled;
+        this.nodeTagsMap = new ConcurrentHashMap<>();
     }
 
     public void collect() {
@@ -168,7 +173,12 @@ public class NodeMetricsCollector implements Loggable {
 
         final ArrayList<Pair<String, String>> containerTags = new ArrayList<>(tags);
         containerTags.add(new Pair<>("container_name", containerName));
-        containerTags.add(new Pair<>("node", nodeName));
+
+        if (nodeTagsMap.containsKey(nodeName)) {
+            containerTags.addAll(nodeTagsMap.get(nodeName));
+        } else {
+            containerTags.add(new Pair<>("node", nodeName));
+        }
 
         final JsonObject limits = resources.getJsonObject("limits", new JsonObject());
         final JsonObject requests = resources.getJsonObject("requests", new JsonObject());
@@ -233,7 +243,12 @@ public class NodeMetricsCollector implements Loggable {
     }
 
     private List<Pair<String, String>> buildNodeTags(JsonObject node) {
-        return Lists.newArrayList(new Pair<>("node", node.getString(NAME)),
-                new Pair<>(ROLE, node.getJsonObject(LABELS).getString(KUBERNETES_IO_ROLE)));
+        final String name = node.getString(NAME);
+        final String role = node.getJsonObject(LABELS).getString(KUBERNETES_IO_ROLE);
+        final List<Pair<String, String>> nodeTags = Lists.newArrayList(new Pair<>("node", name), new Pair<>(ROLE, role));
+
+        nodeTagsMap.put(name, nodeTags);
+
+        return nodeTags;
     }
 }
