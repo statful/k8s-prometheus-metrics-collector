@@ -24,7 +24,7 @@ public class SimpleWebClient extends AbstractVerticle implements Loggable {
     private boolean isDevLoggingEnabled;
 
     @Override
-    public void start(Future<Void> startFuture) {
+    public void start() {
         isDevLoggingEnabled = Boolean.valueOf(System.getProperty(DEV_MODE_KEY, Boolean.FALSE.toString()));
 
         initWebClient();

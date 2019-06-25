@@ -52,8 +52,8 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
 
     private Single<String> deployVerticle(AbstractVerticle verticle) {
         return vertx.rxDeployVerticle(verticle)
-                .doOnSuccess(ignore -> log().info("{} client successfully deployed.", verticle.getClass().getName()))
-                .doOnError(e -> log().error("{} failed to deploy.", e, verticle.getClass().getName()));
+                .doOnSuccess(ignore -> log().info("{0} client successfully deployed.", verticle.getClass().getName()))
+                .doOnError(e -> log().error("{0} failed to deploy.", e, verticle.getClass().getName()));
     }
 
     private PrometheusParserOptions buildPrometheusParserOptions(JsonObject config) {

@@ -82,7 +82,7 @@ public class KubeApi extends AbstractVerticle implements Loggable {
                     this.token = file;
                     startFuture.complete();
                 }, error -> {
-                    log().error("Error reading token file {}", error, tokenLocation);
+                    log().error("Error reading token file {0}", error, tokenLocation);
                     startFuture.fail(error);
                 });
     }
