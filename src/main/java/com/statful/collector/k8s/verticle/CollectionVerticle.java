@@ -2,15 +2,20 @@ package com.statful.collector.k8s.verticle;
 
 import com.statful.collector.k8s.NodeMetricsCollector;
 import com.statful.collector.k8s.clients.KubeApi;
+import com.statful.collector.k8s.clients.SimpleWebClient;
 import com.statful.collector.k8s.config.CollectorConfig;
 import com.statful.collector.k8s.utils.Loggable;
 import com.statful.converter.prometheus.PrometheusParser;
 import com.statful.converter.prometheus.PrometheusParserOptions;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.eventbus.EventBus;
+
+import java.util.List;
 
 public class CollectionVerticle extends AbstractVerticle implements Loggable {
 
@@ -18,16 +23,25 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
 
     @Override
     public void start(Future<Void> startFuture) {
-        CollectorConfig.loadConfigRetriever(vertx)
+        final Single<JsonObject> config = CollectorConfig.loadConfigRetriever(vertx)
                 .flatMap(ConfigRetriever::rxGetConfig)
-                .doOnEvent((conf, e) -> deployKubeApi(conf, startFuture))
+                .cache();
+
+        final Single<List<String>> verticles = config
+                .flatMapObservable(conf -> Observable.fromArray(new KubeApi(conf), new SimpleWebClient()))
+                .flatMapSingle(this::deployVerticle)
+                .toList();
+
+        config
+                .zipWith(verticles, (conf, $) -> conf)
                 .subscribe(conf -> {
                     final int collectSchedulerPeriod = conf.getInteger("collector.period", COLLECT_SCHEDULER_PERIOD);
 
                     final EventBus eventBus = vertx.eventBus();
-                    final KubeApi.Client client = new KubeApi.Client(eventBus);
+                    final KubeApi.Client kubeApi = new KubeApi.Client(eventBus);
+                    final SimpleWebClient.Client simpleWebClient = new SimpleWebClient.Client(eventBus);
                     final PrometheusParser textParser = new PrometheusParser(buildPrometheusParserOptions(conf));
-                    final NodeMetricsCollector nodeMetricsCollector = new NodeMetricsCollector(client, eventBus, textParser);
+                    final NodeMetricsCollector nodeMetricsCollector = new NodeMetricsCollector(kubeApi, simpleWebClient, eventBus, textParser, conf);
 
                     vertx.setPeriodic(collectSchedulerPeriod, id -> nodeMetricsCollector.collect());
                 }, e -> {
@@ -36,15 +50,10 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
                 });
     }
 
-    private void deployKubeApi(JsonObject config, Future<Void> startFuture) {
-        vertx.getDelegate().deployVerticle(new KubeApi(config), result -> {
-            if (result.succeeded()) {
-                log().info("Kubernetes API client successfully deployed.");
-            } else {
-                log().error("Kubernetes API client failed to deploy.", result.cause());
-                startFuture.fail(result.cause());
-            }
-        });
+    private Single<String> deployVerticle(AbstractVerticle verticle) {
+        return vertx.rxDeployVerticle(verticle)
+                .doOnSuccess(ignore -> log().info("{} client successfully deployed.", verticle.getClass().getName()))
+                .doOnError(e -> log().error("{} failed to deploy.", e, verticle.getClass().getName()));
     }
 
     private PrometheusParserOptions buildPrometheusParserOptions(JsonObject config) {

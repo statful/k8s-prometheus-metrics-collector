@@ -3,6 +3,7 @@ package com.statful.collector.k8s;
 import com.statful.client.CustomMetric;
 import com.statful.client.CustomMetricsConsumer;
 import com.statful.collector.k8s.clients.KubeApi;
+import com.statful.collector.k8s.clients.SimpleWebClient;
 import com.statful.converter.Converter;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
@@ -24,6 +25,8 @@ public class NodeMetricsCollectorTest {
     @Mock
     private KubeApi.Client kubeApi;
     @Mock
+    private SimpleWebClient.Client simpleWebClient;
+    @Mock
     private EventBus eventBus;
     @Mock
     private Converter converter;
@@ -33,7 +36,7 @@ public class NodeMetricsCollectorTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
-        victim = new NodeMetricsCollector(kubeApi, eventBus, converter);
+        victim = new NodeMetricsCollector(kubeApi, simpleWebClient, eventBus, converter, new JsonObject());
     }
 
     @Test

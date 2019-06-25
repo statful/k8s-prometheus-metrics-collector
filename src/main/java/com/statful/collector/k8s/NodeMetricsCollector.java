@@ -5,6 +5,7 @@ import com.statful.client.CustomMetric;
 import com.statful.client.CustomMetricsConsumer;
 import com.statful.client.MetricType;
 import com.statful.collector.k8s.clients.KubeApi;
+import com.statful.collector.k8s.clients.SimpleWebClient;
 import com.statful.collector.k8s.utils.Loggable;
 import com.statful.converter.Converter;
 import com.statful.converter.util.ResourceQuantityParser;
@@ -18,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +38,7 @@ public class NodeMetricsCollector implements Loggable {
     private static final Pattern POD_GENERATED = Pattern.compile("-?\\w{9,10}-\\w{5}($|_)");
 
     private final KubeApi.Client kubeApi;
+    private final SimpleWebClient.Client simpleWebClient;
     private final EventBus eventBus;
     private final Converter converter;
 
@@ -43,39 +46,49 @@ public class NodeMetricsCollector implements Loggable {
     private final Boolean nodeMetricsDisabled;
     private final Boolean metricsServerMetricsDisabled;
 
+    private final JsonArray additionalEndpoints;
+
     private final Map<String, List<Pair<String, String>>> nodeTagsMap;
 
     public NodeMetricsCollector(KubeApi.Client kubeApi,
-                                EventBus eventBus,
-                                Converter converter) {
-        this.kubeApi = kubeApi;
-        this.eventBus = eventBus;
-        this.converter = converter;
-        this.cAdvisorMetricsDisabled = Boolean.valueOf(System.getProperty("collector.cadvisor.disabled", "false"));
-        this.nodeMetricsDisabled = Boolean.valueOf(System.getProperty("collector.nodes.disabled", "false"));
-        this.metricsServerMetricsDisabled = Boolean.valueOf(System.getProperty("collector.metricsserver.disabled", "false"));
-        this.nodeTagsMap = new ConcurrentHashMap<>();
-    }
-
-    public NodeMetricsCollector(KubeApi.Client kubeApi,
+                                SimpleWebClient.Client simpleWebClient,
                                 EventBus eventBus,
                                 Converter converter,
-                                Boolean cAdvisorMetricsDisabled,
-                                Boolean nodeMetricsDisabled,
-                                Boolean metricsServerMetricsDisabled) {
+                                JsonObject config) {
         this.kubeApi = kubeApi;
+        this.simpleWebClient = simpleWebClient;
         this.eventBus = eventBus;
         this.converter = converter;
-        this.cAdvisorMetricsDisabled = cAdvisorMetricsDisabled;
-        this.nodeMetricsDisabled = nodeMetricsDisabled;
-        this.metricsServerMetricsDisabled = metricsServerMetricsDisabled;
+        this.additionalEndpoints = config.getJsonArray("collector.additionalEndpoints", new JsonArray(Collections.emptyList()));
+        this.cAdvisorMetricsDisabled = config.getBoolean("collector.cadvisor.disabled", false);
+        this.nodeMetricsDisabled = config.getBoolean("collector.nodes.disabled", false);
+        this.metricsServerMetricsDisabled = config.getBoolean("collector.metricsserver.disabled", false);
         this.nodeTagsMap = new ConcurrentHashMap<>();
     }
 
     public void collect() {
         getMetricsServerPodsMetrics();
         getPodMetrics();
+        getClusterNodeMetrics();
+        collectAdditionalEndpoints();
+    }
 
+    private void collectAdditionalEndpoints() {
+        additionalEndpoints.stream()
+                .map(JsonObject.class::cast)
+                .forEach(this::collectAdditionalEndpoint);
+    }
+
+    private void collectAdditionalEndpoint(JsonObject additionalEndpoint) {
+        final String name = additionalEndpoint.getString("name");
+        final String url = additionalEndpoint.getString("url");
+
+        simpleWebClient.getEndpoint(url)
+                .subscribe(text -> converter.convert(text, buildAdditionalEndpointTag(name), this::sendMetric),
+                        e -> log().error("Failed to convert metrics for additional endpoint {0} - {1}", name, url));
+    }
+
+    private void getClusterNodeMetrics() {
         getNodeMetadata()
                 .flatMapCompletable(this::getNodeMetrics, true, 1)
                 .subscribe(() -> {
@@ -250,5 +263,9 @@ public class NodeMetricsCollector implements Loggable {
         nodeTagsMap.put(name, nodeTags);
 
         return nodeTags;
+    }
+
+    private ArrayList<Pair<String, String>> buildAdditionalEndpointTag(String name) {
+        return Lists.newArrayList(new Pair<>("app", name));
     }
 }

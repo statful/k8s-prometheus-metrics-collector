@@ -1,7 +1,6 @@
 {
   "collector.ignore.metric.regex": "",
   "collector.ignore.metric": [
-    "apiserver_client_certificate_expiration_seconds_bucket"
   ],
   "collector.ignore.tags.regex": "",
   "collector.ignore.tags": [
@@ -29,7 +28,7 @@
   "kubernetes.api.token": "/var/run/secrets/kubernetes.io/serviceaccount/token",
   "staful.token": "<token>",
   "statful.host": "api.statful.com",
-  "statful.dryrun": true,
+  "statful.dryrun": false,
   "statful.environment": "production",
   "development.logging.enabled": false
 }
