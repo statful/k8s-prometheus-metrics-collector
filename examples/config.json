@@ -30,5 +30,11 @@
   "statful.host": "api.statful.com",
   "statful.dryrun": false,
   "statful.environment": "production",
-  "development.logging.enabled": false
+  "development.logging.enabled": false,
+  "collector.additionalEndpoints": [
+    {
+      "name": "influx",
+      "url": "http://10.12.34.124:8086/metrics"
+    }
+  ]
 }
