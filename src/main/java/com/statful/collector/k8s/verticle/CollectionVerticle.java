@@ -28,7 +28,7 @@ public class CollectionVerticle extends AbstractVerticle implements Loggable {
                 .cache();
 
         final Single<List<String>> verticles = config
-                .flatMapObservable(conf -> Observable.fromArray(new KubeApi(conf), new SimpleWebClient()))
+                .flatMapObservable(conf -> Observable.fromArray(new KubeApi(conf), new SimpleWebClient(conf)))
                 .flatMapSingle(this::deployVerticle)
                 .toList();
 

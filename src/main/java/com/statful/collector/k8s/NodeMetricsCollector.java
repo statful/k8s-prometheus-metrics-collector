@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 
@@ -80,12 +81,12 @@ public class NodeMetricsCollector implements Loggable {
     }
 
     private void collectAdditionalEndpoint(JsonObject additionalEndpoint) {
-        final String name = additionalEndpoint.getString("name");
         final String url = additionalEndpoint.getString("url");
+        final JsonObject tags = additionalEndpoint.getJsonObject("tags", new JsonObject(Collections.emptyMap()));
 
         simpleWebClient.getEndpoint(url)
-                .subscribe(text -> converter.convert(text, buildAdditionalEndpointTag(name), this::sendMetric),
-                        e -> log().error("Failed to convert metrics for additional endpoint {0} - {1}", name, url));
+                .subscribe(text -> converter.convert(text, buildAdditionalEndpointTags(tags), this::sendMetric),
+                        e -> log().error("Failed to convert metrics for additional endpoint {0}", url));
     }
 
     private void getClusterNodeMetrics() {
@@ -265,7 +266,9 @@ public class NodeMetricsCollector implements Loggable {
         return nodeTags;
     }
 
-    private ArrayList<Pair<String, String>> buildAdditionalEndpointTag(String name) {
-        return Lists.newArrayList(new Pair<>("app", name));
+    private List<Pair<String, String>> buildAdditionalEndpointTags(JsonObject name) {
+        return name.stream()
+                .map(entry -> new Pair<>(entry.getKey(), (String) entry.getValue()))
+                .collect(Collectors.toList());
     }
 }

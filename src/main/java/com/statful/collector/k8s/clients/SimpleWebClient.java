@@ -3,8 +3,8 @@ package com.statful.collector.k8s.clients;
 import com.statful.collector.k8s.utils.Loggable;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.Single;
-import io.vertx.core.Future;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.ext.web.handler.impl.HttpStatusException;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -23,10 +23,12 @@ public class SimpleWebClient extends AbstractVerticle implements Loggable {
     private WebClient client;
     private boolean isDevLoggingEnabled;
 
+    public SimpleWebClient(JsonObject config) {
+        this.isDevLoggingEnabled = config.getBoolean(DEV_MODE_KEY, false);
+    }
+
     @Override
     public void start() {
-        isDevLoggingEnabled = Boolean.valueOf(System.getProperty(DEV_MODE_KEY, Boolean.FALSE.toString()));
-
         initWebClient();
         registerConsumers();
     }
