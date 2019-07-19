@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: k8s-metrics-collector
+  name: k8s-prometheus-metrics-collector
 data:
   collector.ignore.metric.regex: ""
   collector.ignore.metric: |

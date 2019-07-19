@@ -2,21 +2,21 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: statful-k8s-metrics-collector
+  name: statful-k8s-prometheus-metrics-collector
   namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    run: k8s-metrics-collector
-  name: k8s-metrics-collector
+    run: k8s-prometheus-metrics-collector
+  name: k8s-prometheus-metrics-collector
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: k8s-metrics-collector
+      run: k8s-prometheus-metrics-collector
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -25,13 +25,13 @@ spec:
   template:
     metadata:
       labels:
-        run: k8s-metrics-collector
+        run: k8s-prometheus-metrics-collector
     spec:
-      serviceAccountName: statful-k8s-metrics-collector
+      serviceAccountName: statful-k8s-prometheus-metrics-collector
       containers:
-        - image: statful/k8s-metrics-collector:1.1.0
+        - image: statful/k8s-prometheus-metrics-collector:1.1.0
           imagePullPolicy: Always
-          name: k8s-metrics-collector
+          name: k8s-prometheus-metrics-collector
           resources:
             limits:
               cpu: 0.5

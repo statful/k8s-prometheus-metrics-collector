@@ -26,9 +26,9 @@ exec java \
     ${COLLECTOR_OPTS} \
     -Dcollector.config.path=${COLLECTOR_CONFIG_PATH:-conf/config.json} \
     -Dcollector.configmap.namespace=${COLLECTOR_CONFIGMAP_NAMESPACE:-default} \
-    -Dcollector.configmap.name=${COLLECTOR_CONFIGMAP_NAME:-k8s-metrics-collector} \
+    -Dcollector.configmap.name=${COLLECTOR_CONFIGMAP_NAME:-k8s-prometheus-metrics-collector} \
     -Dcollector.secret.namespace=${COLLECTOR_SECRET_NAMESPACE:-default} \
-    -Dcollector.secret.name=${COLLECTOR_SECRET_NAME:-k8s-metrics-collector} \
+    -Dcollector.secret.name=${COLLECTOR_SECRET_NAME:-k8s-prometheus-metrics-collector} \
     -Dcollector.ignore.metric.regex=${COLLECTOR_IGNORE_METRIC_REGEX} \
     -Dcollector.ignore.metric=${COLLECTOR_IGNORE_METRIC} \
     -Dcollector.ignore.tags.regex=${COLLECTOR_IGNORE_TAGS_REGEX} \

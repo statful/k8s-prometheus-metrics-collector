@@ -18,7 +18,7 @@ public class CollectorConfig {
 
     private static final String DEFAULT_CONFIG_FILE_PATH = "conf/config.json";
     private static final String DEFAULT_CONFIGMAP_NAMESPACE = "default";
-    private static final String DEFAULT_CONFIGMAP_NAME = "k8s-metrics-collector";
+    private static final String DEFAULT_CONFIGMAP_NAME = "k8s-prometheus-metrics-collector";
     private static final String DEFAULT_SECRET_NAMESPACE = "default";
     private static final String DEFAULT_SECRET_NAME = "statful-token";
 

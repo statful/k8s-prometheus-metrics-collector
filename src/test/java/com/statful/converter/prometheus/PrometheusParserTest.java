@@ -34,9 +34,9 @@ public class PrometheusParserTest {
                     "# TYPE metric_name counter\n" +
                     "metric_name 1\n" +
                     "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\"} 2\n" +
-                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-metrics-collector-7998cf8c7d-c6d87\"} 3\n" +
-                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-metrics-collector-7998cf8c7d-c6d87\"} 3e-2\n" +
-                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-metrics-collector-7998cf8c7d-c6d87\"} NaN";
+                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-prometheus-metrics-collector-7998cf8c7d-c6d87\"} 3\n" +
+                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-prometheus-metrics-collector-7998cf8c7d-c6d87\"} 3e-2\n" +
+                    "metric_name{key=\"8c73405e-ce85-4aa0-a080-e2a646e5a4fa\",key2=\"k8s-prometheus-metrics-collector-7998cf8c7d-c6d87\"} NaN";
     private static final String GAUGE_METRIC =
             "# HELP metric_name some comment about the metric\n" +
                     "# TYPE metric_name gauge\n" +
@@ -63,12 +63,12 @@ public class PrometheusParserTest {
 
     private static final String EXPECTED_COUNT = "test.counter.metric_name 1 \\d.* count,sum,10 100\n" +
             "test.counter.metric_name,key=8c73405e-ce85-4aa0-a080-e2a646e5a4fa 2 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name,key2=k8s-metrics-collector-7998cf8c7d-c6d87,key=8c73405e-ce85-4aa0-a080-e2a646e5a4fa 3 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name,key2=k8s-metrics-collector-7998cf8c7d-c6d87,key=8c73405e-ce85-4aa0-a080-e2a646e5a4fa 0.03 \\d.* count,sum,10 100";
+            "test.counter.metric_name,key2=k8s-prometheus-metrics-collector-7998cf8c7d-c6d87,key=8c73405e-ce85-4aa0-a080-e2a646e5a4fa 3 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name,key2=k8s-prometheus-metrics-collector-7998cf8c7d-c6d87,key=8c73405e-ce85-4aa0-a080-e2a646e5a4fa 0.03 \\d.* count,sum,10 100";
     private static final String EXPECTED_COUNT_WITH_REPLACEMENT = "test.counter.metric_name 1 \\d.* count,sum,10 100\n" +
             "test.counter.metric_name,key=_uuid_ 2 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name,key2=k8s-metrics-collector,key=_uuid_ 3 \\d.* count,sum,10 100\n" +
-            "test.counter.metric_name,key2=k8s-metrics-collector,key=_uuid_ 0.03 \\d.* count,sum,10 100";
+            "test.counter.metric_name,key2=k8s-prometheus-metrics-collector,key=_uuid_ 3 \\d.* count,sum,10 100\n" +
+            "test.counter.metric_name,key2=k8s-prometheus-metrics-collector,key=_uuid_ 0.03 \\d.* count,sum,10 100";
     private static final String EXPECTED_GAUGE = "test.gauge.metric_name 1 \\d.* 100\n" +
             "test.gauge.metric_name,key=value 2 \\d.* 100\n" +
             "test.gauge.metric_name,key2=value2,key=value 3 \\d.* 100\n" +

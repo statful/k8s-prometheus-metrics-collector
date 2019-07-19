@@ -10,8 +10,8 @@ RUN mvn package -B
 
 FROM statful/java-run
 
-ENV APPLICATION_NAME k8s-metrics-pipeline
-ENV APPLICATION_JAR k8s-metrics-pipeline-fat.jar
+ENV APPLICATION_NAME k8s-prometheus-metrics-collector
+ENV APPLICATION_JAR k8s-prometheus-metrics-collector.jar
 
 ADD provision/run.sh run.sh
 RUN mkdir -p /opt/$APPLICATION_NAME

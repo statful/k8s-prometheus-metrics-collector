@@ -1,9 +1,9 @@
-Kubernetes Metrics Collector
+Kubernetes Prometheus Metrics Collector
 ==============
 
-[![Build Status](https://travis-ci.org/statful/k8s-metrics-collector.svg?branch=master)](https://travis-ci.org/statful/k8s-metrics-collector)
+[![Build Status](https://travis-ci.org/statful/k8s-prometheus-metrics-collector.svg?branch=master)](https://travis-ci.org/statful/k8s-prometheus-metrics-collector)
 
-Collector of cluster-wide metrics for [kubernetes](https://kubernetes.io/).
+Collector of cluster-wide prometheus metrics for [kubernetes](https://kubernetes.io/).
 
 ## Table of Contents
 
@@ -32,7 +32,7 @@ You have to set the configuration properties using the container environment var
 | ---------------------------------- | ---------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `collector.config.path`            | `COLLECTOR_CONFIG_PATH`            | Path to the json file containing the configurations.                       | conf/config.json                                     |
 | `collector.configmap.namespace`    | `COLLECTOR_CONFIGMAP_NAMESPACE`    | Namespace of the k8s config map (overrides the json configs)               | default                                              |
-| `collector.configmap.name`         | `COLLECTOR_CONFIGMAP_NAME`         | Name of the k8s config map (overrides the json configs)                    | k8s-metrics-collector                                |
+| `collector.configmap.name`         | `COLLECTOR_CONFIGMAP_NAME`         | Name of the k8s config map (overrides the json configs)                    | k8s-prometheus-metrics-collector                                |
 | `collector.secret.namespace`       | `COLLECTOR_SECRET_NAMESPACE`       | Namespace of the k8s secret (overrides the json and config map)            | default                                              |
 | `collector.secret.name`            | `COLLECTOR_SECRET_NAME`            | Name of the k8s secret (overrides the json and config map)                 | statful-token                                        |
 | `collector.ignore.metric.regex`    | `COLLECTOR_IGNORE_METRIC_REGEX`    | Regex used to ignore metric names                                          |                                                      |
@@ -67,12 +67,12 @@ The following configurations can only be set with system variables, or passed en
 Install using the following command, after replacing the statful token placeholder in the yaml file:
 
 ```
-kubectl create -f https://raw.githubusercontent.com/statful/k8s-metrics-collector/master/deploy/1.0.4.yaml
+kubectl create -f https://raw.githubusercontent.com/statful/k8s-prometheus-metrics-collector/master/deploy/1.0.4.yaml
 ```
 
 ## Container
 
-Official containers can be found [here](https://hub.docker.com/r/statful/k8s-metrics-collector/).
+Official containers can be found [here](https://hub.docker.com/r/statful/k8s-prometheus-metrics-collector/).
 
 ## Authors
 
@@ -80,4 +80,4 @@ Official containers can be found [here](https://hub.docker.com/r/statful/k8s-met
 
 ## License
 
-Kubernetes Metrics Collector is available under the MIT license. See the [LICENSE](https://raw.githubusercontent.com/statful/k8s-metrics-collector/master/LICENSE) file for more information.
+Kubernetes Prometheus Metrics Collector is available under the MIT license. See the [LICENSE](https://raw.githubusercontent.com/statful/k8s-prometheus-metrics-collector/master/LICENSE) file for more information.
